@@ -1,9 +1,11 @@
+.SILENT:
 CXX=g++
 CXXFLAGS= -O2 -g -Wall -Wextra -std=c++11
-MAIN=main.cc
+FILES=server.cc
+OUT=server
 
 default:
-	$(CXX) $(CXXFLAGS) $(MAIN) -o main
+	$(CXX) $(CXXFLAGS) $(FILES) -o $(OUT)
 
 clean:
-	rm main
+	rm $(OUT)

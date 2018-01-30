@@ -12,12 +12,44 @@
 
 using namespace std;
 
-const unordered_map<string, string> http_messages = {
-        {"failure message",
-            "HTTP/1.1 404 Not Found\r\nConnection: close\r\nServer: webserver/0.0.1\r\nContent-Type: text/html\r\n"},
-        {"failure page", "<h1>404 Page Not Found<\h1>"},
-        {"default page", "HTTP/1.1 200 OK\r\nConnection: close\r\nServer: webserver/0.0.1\r\n"}
+struct HeaderInfo {
+    string header_line;
+    string date;
+    int content_length;
+    string keep_alive;
+    string connection;
+    string content_type;
+
+    HeaderInfo() {
+        header_line = "HTTP/1.1 200 OK";
+        date = "%a, %d %b %Y %T GMT";
+        content_length = 0;
+        keep_alive = "timeout=%d,max=%d";
+        connection = "Keep-Alive";
+        content_type = "application/octet-stream";
+    }
+    void SetFailureMessage() {
+        header_line = "HTTP/1.1 404 Not Found";
+        connection = "close";
+        content_type = "text/html";
+    }
 };
+
+const unordered_map<string, string> ext_to_MIME = {
+    {".gif", "image/gif"},
+    {".html", "text/html"},
+    {".jpeg", "image/jpeg"},
+    {".jpg", "image/jpeg"}
+};
+
+void GenerateResponse(int sock_fd) {
+    int n;
+    char buffer[512];
+    bzero(buffer, 512);
+    HeaderInfo header_info;
+    header_info.content_type = ext_to_MIME.find(".gif")->second;
+    n = 0;
+}
 
 void error(const char* msg) {
     fprintf(stderr, "%s", msg);
@@ -67,6 +99,8 @@ int main(int argc, char* argv[]) {
 
     n = write(new_sock_fd, "I got your message", 18);
     if (n < 0) { error("ERROR writing to socket"); }
+
+    GenerateResponse(sock_fd);
 
     close(new_sock_fd);
     close(sock_fd);

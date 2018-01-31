@@ -1,7 +1,7 @@
-#include <stdio.h>
+#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
-#include <errno.h>
+#include <stdio.h>
 #include <unistd.h>
 #include <signal.h>
 #include <sys/types.h>
@@ -45,6 +45,11 @@ const unordered_map<string, string> ext_to_MIME = {
     {".jpg", "image/jpeg"}
 };
 
+void error(const char* msg) {
+    fprintf(stderr, "%s\n", msg);
+    exit(1);
+}
+
 void GenerateResponse(int sock_fd) {
     int n;
     char buffer[512];
@@ -62,14 +67,23 @@ void GenerateResponse(int sock_fd) {
     size_t start = 0;
     size_t end = request.find(' ', start);
     if (end == string::npos) { return; }
+    auto method = request.substr(start, end - start);
+
+    start = end + 1;
+    end = request.find(' ', start);
+    if (end == string::npos) { return; }
+    auto uri = request.substr(start, end - start);
+
+    start = end + 1;
+    end = request.find("\r\n", start);
+    if (end == string::npos) { return; }
+    auto version = request.substr(start, end - start);
+    
+    start = end + 2;
+
 
     HeaderInfo header_info;
     header_info.content_type = ext_to_MIME.find(".gif")->second;
-}
-
-void error(const char* msg) {
-    fprintf(stderr, "%s", msg);
-    exit(1);
 }
 
 int main(int argc, char* argv[]) {

@@ -131,7 +131,6 @@ void GenerateResponse(int sock_fd) {
             }
         }
 
-
         if (status == 0) {
             char time_buffer[512];
             struct tm* time = gmtime(&buf.st_mtime);
@@ -141,6 +140,13 @@ void GenerateResponse(int sock_fd) {
             }
         }
 
+        char time_buffer[512];
+        time_t current_time = time(nullptr);
+        struct tm* time = gmtime(&current_time);
+        status = strftime(time_buffer, 512, format_date.c_str(), time);
+        if (status != 0) {
+            header_info.date = string(time_buffer);
+        }
     }
 }
 

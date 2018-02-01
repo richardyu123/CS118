@@ -210,7 +210,7 @@ int main(int argc, char* argv[]) {
         
         if (p_id == 0) {
             close(sock_fd);
-            GenerateResponse(sock_fd);
+            GenerateResponse(new_sock_fd);
             close(new_sock_fd);
             exit(0);
         } else {

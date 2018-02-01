@@ -1,7 +1,10 @@
+#include <algorithm>
 #include <errno.h>
+#include <fstream>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <sstream>
 #include <unistd.h>
 #include <signal.h>
 #include <sys/types.h>
@@ -71,16 +74,16 @@ void error(const char* msg) {
 
 void GenerateResponse(int sock_fd) {
     int n;
-    char buffer[512];
-    bzero(buffer, 512);
+    char req_buffer[512];
+    bzero(req_buffer, 512);
     string request;
 
-    n = read(sock_fd, buffer, 511);
+    n = read(sock_fd, req_buffer, 511);
     if (n < 0) {
         error("ERROR reading from socket.");
     }
 
-    request.append(buffer, n);
+    request.append(req_buffer, n);
     printf("Got request: %s", request.c_str());
 
     size_t start = 0;
@@ -104,11 +107,24 @@ void GenerateResponse(int sock_fd) {
 
     string path = "." + uri;
     ifstream stream(path);
+    string content;
 
     if (stream.fail() || /*TODO: Replace with stuff from stat*/ false) {
         header_info.SetFailureMessage();
     } else {
+        stringstream buffer;
+        buffer << stream.rdbuf();
+        content = buffer.str();
 
+        auto i = uri.rfind('.');
+        if (i != string::npos) {
+            auto ext = uri.substr(i);
+            transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+            auto iter = ext_to_MIME.find(ext);
+            if (iter != ext_to_MIME.end()) {
+               header_info.content_type = iter->second;
+            }
+        }
     }
 }
 

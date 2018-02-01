@@ -1,19 +1,23 @@
 #include <algorithm>
 #include <errno.h>
 #include <fstream>
+#include <sstream>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <sstream>
 #include <unistd.h>
 #include <signal.h>
+#include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
 #include <netinet/in.h>
 #include <unordered_map>
+#include <iostream>
 
 using namespace std;
+
+static string format_date = "%a, %d %b %Y %T GMT";
 
 struct HeaderInfo {
     string header_line;
@@ -125,10 +129,22 @@ void GenerateResponse(int sock_fd) {
                header_info.content_type = iter->second;
             }
         }
+
+        struct stat buf;
+        int status = stat(path.c_str(), &buf);
+        if (status == 0) {
+            char time_buffer[512];
+            struct tm* time = gmtime(&buf.st_mtime);
+            strftime(time_buffer, 512, format_date.c_str(), time);
+            header_info.last_modified = string(time_buffer);
+        }
+
     }
 }
 
 int main(int argc, char* argv[]) {
+    HeaderInfo header_info;
+    cout << header_info.GetResponse().c_str();
     int sock_fd, new_sock_fd, port_no;
     socklen_t cli_len;
     struct sockaddr_in serv_addr, cli_addr;

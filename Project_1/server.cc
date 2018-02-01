@@ -116,10 +116,13 @@ void GenerateResponse(int sock_fd) {
     int status = stat(path.c_str(), &buf);
     if (stream.fail() || (status == 0 && S_ISDIR(buf.st_mode))) {
         header_info.SetFailureMessage();
+        content = "<html><h1>404 Page Not Found<\h1><\html>";
+        header_info.content_length = content.length();
     } else {
         stringstream buffer;
         buffer << stream.rdbuf();
         content = buffer.str();
+        header_info.content_length = content.length();
 
         auto i = uri.rfind('.');
         if (i != string::npos) {
@@ -148,6 +151,12 @@ void GenerateResponse(int sock_fd) {
             header_info.date = string(time_buffer);
         }
     }
+    printf("%s\n", uri.c_str());
+    auto response = header_info.GetResponse();
+    response += "\r\n\r\n" + content;
+    status = write(sock_fd, response.c_str(), response.length());
+    if (status < 0) { error("ERROR writing to socket."); }
+    printf("%s", response.c_str());
 }
 
 int main(int argc, char* argv[]) {

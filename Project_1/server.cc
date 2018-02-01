@@ -31,10 +31,6 @@ struct HeaderInfo {
         content_length = 0;
         connection = "close";
         content_type = "application/octet-stream";
-        string_to_var = {
-            {"Header Line", &header_line},
-            
-        };
         failure = false;
     }
     void SetFailureMessage() {
@@ -45,10 +41,21 @@ struct HeaderInfo {
     }
 
     string GetResponse() {
-        char* buffer[512];
+        char buffer[512];
         if (!failure) {
-            sprintf("%s\r\n%s\r\n%s\r\n%s\r\n");
+            sprintf(buffer,
+                    "%s\r\nConnection: %s\r\nServer: %s\r\nContent-Type: %s\r\nLast-Modified: %s\r\nDate: %s\r\nContent-Length: %d\r\n",
+                    header_line.c_str(), connection.c_str(), server.c_str(),
+                    content_type.c_str(), last_modified.c_str(), date.c_str(),
+                    content_length);
+        } else {
+            sprintf(buffer,
+                    "%s\r\nConnection: %s\r\nServer: %s\r\nContent-Type: %s\r\nDate: %s\r\nContent-Length: %d\r\n",
+                    header_line.c_str(), connection.c_str(), server.c_str(),
+                    content_type.c_str(), date.c_str(), content_length);
         }
+        string output(buffer);
+        return output;
     }
 };
 
@@ -95,7 +102,6 @@ void GenerateResponse(int sock_fd) {
     
     start = end + 2;
 
-
     HeaderInfo header_info;
     header_info.content_type = ext_to_MIME.find(".gif")->second;
 }
@@ -104,7 +110,6 @@ int main(int argc, char* argv[]) {
     int sock_fd, new_sock_fd, port_no;
     socklen_t cli_len;
     struct sockaddr_in serv_addr, cli_addr;
-
     if (argc < 2) {
         fprintf(stderr, "ERROR: No port provided\n");
         exit(1);

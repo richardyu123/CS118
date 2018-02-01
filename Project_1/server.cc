@@ -22,8 +22,6 @@ struct HeaderInfo {
     string content_type;
     bool failure;
 
-    unordered_map<string, string*> string_to_var;
-
     HeaderInfo() {
         header_line = "HTTP/1.1 200 OK";
         last_modified = date = "%a, %d %b %Y %T GMT";

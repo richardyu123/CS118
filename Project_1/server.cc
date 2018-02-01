@@ -112,8 +112,9 @@ void GenerateResponse(int sock_fd) {
     string path = "." + uri;
     ifstream stream(path);
     string content;
-
-    if (stream.fail() || /*TODO: Replace with stuff from stat*/ false) {
+    struct stat buf;
+    int status = stat(path.c_str(), &buf);
+    if (stream.fail() || (status == 0 && S_ISDIR(buf.st_mode))) {
         header_info.SetFailureMessage();
     } else {
         stringstream buffer;
@@ -130,13 +131,14 @@ void GenerateResponse(int sock_fd) {
             }
         }
 
-        struct stat buf;
-        int status = stat(path.c_str(), &buf);
+
         if (status == 0) {
             char time_buffer[512];
             struct tm* time = gmtime(&buf.st_mtime);
-            strftime(time_buffer, 512, format_date.c_str(), time);
-            header_info.last_modified = string(time_buffer);
+            status = strftime(time_buffer, 512, format_date.c_str(), time);
+            if (status != 0) {
+                header_info.last_modified = string(time_buffer);
+            }
         }
 
     }

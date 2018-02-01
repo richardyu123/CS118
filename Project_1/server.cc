@@ -101,7 +101,15 @@ void GenerateResponse(int sock_fd) {
     start = end + 2;
 
     HeaderInfo header_info;
-    header_info.content_type = ext_to_MIME.find(".gif")->second;
+
+    string path = "." + uri;
+    ifstream stream(path);
+
+    if (stream.fail() || /*TODO: Replace with stuff from stat*/ false) {
+        header_info.SetFailureMessage();
+    } else {
+
+    }
 }
 
 int main(int argc, char* argv[]) {

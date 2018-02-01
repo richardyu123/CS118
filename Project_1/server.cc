@@ -88,7 +88,7 @@ void GenerateResponse(int sock_fd) {
     }
 
     request.append(req_buffer, n);
-    printf("Got request: %s", request.c_str());
+    // printf("Got request: %s", request.c_str());
 
     size_t start = 0;
     size_t end = request.find(' ', start);
@@ -110,13 +110,13 @@ void GenerateResponse(int sock_fd) {
     HeaderInfo header_info;
 
     string path = "." + uri;
-    ifstream stream(path);
     string content;
     struct stat buf;
     int status = stat(path.c_str(), &buf);
+    ifstream stream(path);
     if (stream.fail() || (status == 0 && S_ISDIR(buf.st_mode))) {
         header_info.SetFailureMessage();
-        content = "<html><h1>404 Page Not Found<\h1><\html>";
+        content = "<html><h1>404 Page Not Found</h1></html>";
         header_info.content_length = content.length();
     } else {
         stringstream buffer;
@@ -153,7 +153,7 @@ void GenerateResponse(int sock_fd) {
     }
     printf("%s\n", uri.c_str());
     auto response = header_info.GetResponse();
-    response += "\r\n\r\n" + content;
+    response += "\r\n" + content;
     status = write(sock_fd, response.c_str(), response.length());
     if (status < 0) { error("ERROR writing to socket."); }
     printf("%s", response.c_str());

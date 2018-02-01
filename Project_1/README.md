@@ -1,2 +1,2 @@
 # CS118
-TODO: Move everything into a separate directory
+TODO: Refactor, fix images.

@@ -52,8 +52,8 @@ int main(int argc, char *argv[])
     printf("Please enter the message: ");
     memset(buffer,0, 256);
     fgets(buffer,255,stdin);  // read message
-    if (n < 0)
-        error("ERROR reading in message");
+    //if (n < 0)
+    //    error("ERROR reading in message");
 
     n = write(sockfd,buffer,strlen(buffer));  // write to the socket
     if (n < 0)

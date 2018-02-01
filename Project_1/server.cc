@@ -15,19 +15,26 @@ using namespace std;
 struct HeaderInfo {
     string header_line;
     string date;
+    string last_modified;
+    string server;
     int content_length;
-    string keep_alive;
     string connection;
     string content_type;
     bool failure;
 
+    unordered_map<string, string*> string_to_var;
+
     HeaderInfo() {
         header_line = "HTTP/1.1 200 OK";
-        date = "%a, %d %b %Y %T GMT";
+        last_modified = date = "%a, %d %b %Y %T GMT";
+        server = "webserver/0.0.1";
         content_length = 0;
-        keep_alive = "timeout=%d,max=%d";
-        connection = "Keep-Alive";
+        connection = "close";
         content_type = "application/octet-stream";
+        string_to_var = {
+            {"Header Line", &header_line},
+            
+        };
         failure = false;
     }
     void SetFailureMessage() {
@@ -35,6 +42,13 @@ struct HeaderInfo {
         connection = "close";
         content_type = "text/html";
         failure = true;
+    }
+
+    string GetResponse() {
+        char* buffer[512];
+        if (!failure) {
+            sprintf("%s\r\n%s\r\n%s\r\n%s\r\n");
+        }
     }
 };
 

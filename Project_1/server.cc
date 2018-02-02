@@ -88,22 +88,35 @@ void GenerateResponse(int sock_fd) {
     }
 
     request.append(req_buffer, n);
-    // printf("Got request: %s", request.c_str());
+    //printf("Got request: %s", request.c_str());
 
     size_t start = 0;
     size_t end = request.find(' ', start);
     if (end == string::npos) { return; }
-    auto method = request.substr(start, end - start);
+    string method = request.substr(start, end - start);
 
     start = end + 1;
     end = request.find(' ', start);
     if (end == string::npos) { return; }
-    auto uri = request.substr(start, end - start);
+    string uri = request.substr(start, end - start);
+    string uri_with_spaces = "";
+    size_t uri_start = 0;
+    size_t uri_end = 0;
+    while (true) {
+        uri_end = uri.find("%20", uri_start);
+        if (uri_end == string::npos) {
+            uri_with_spaces += uri.substr(uri_start, uri_end);
+            break;
+        }
+        uri_with_spaces += uri.substr(uri_start, uri_end - uri_start) + ' ';
+        uri_start = uri_end + 3;
+    }
+    uri = uri_with_spaces;
 
     start = end + 1;
     end = request.find("\r\n", start);
     if (end == string::npos) { return; }
-    auto version = request.substr(start, end - start);
+    string version = request.substr(start, end - start);
     
     start = end + 2;
 
@@ -160,8 +173,6 @@ void GenerateResponse(int sock_fd) {
 }
 
 int main(int argc, char* argv[]) {
-    HeaderInfo header_info;
-    cout << header_info.GetResponse().c_str();
     int sock_fd, new_sock_fd, port_no;
     socklen_t cli_len;
     struct sockaddr_in serv_addr, cli_addr;

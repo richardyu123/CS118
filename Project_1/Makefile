@@ -10,7 +10,7 @@ server:
 client:
 	$(CXX) $(CXXFLAGS) client.cc -o client
 
-default: server client
+default: server
 
 clean:
-	rm $(OUT)
+	rm -f $(OUT)

@@ -130,9 +130,6 @@ void GenerateResponse(int sock_fd) {
     } else {
         file_content.assign((istreambuf_iterator<char>(stream)),
                             (istreambuf_iterator<char>()));
-        //stringstream buffer;
-        //buffer << stream.rdbuf();
-        //content = buffer.str();
         header_info.content_length = file_content.length();
 
         auto i = uri.rfind('.');

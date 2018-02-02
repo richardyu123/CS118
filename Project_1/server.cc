@@ -88,7 +88,7 @@ void GenerateResponse(int sock_fd) {
     }
 
     request.append(req_buffer, n);
-    //printf("Got request: %s", request.c_str());
+    printf("%s", request.c_str());
 
     size_t start = 0;
     size_t end = request.find(' ', start);
@@ -164,12 +164,10 @@ void GenerateResponse(int sock_fd) {
             header_info.date = string(time_buffer);
         }
     }
-    printf("%s\n", uri.c_str());
     auto response = header_info.GetResponse();
     response += "\r\n" + content;
     status = write(sock_fd, response.c_str(), response.length());
     if (status < 0) { error("ERROR writing to socket."); }
-    printf("%s", response.c_str());
 }
 
 int main(int argc, char* argv[]) {

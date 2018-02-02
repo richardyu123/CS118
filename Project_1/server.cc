@@ -46,7 +46,7 @@ struct HeaderInfo {
     }
 
     string GetResponse() {
-        char buffer[512];
+        char buffer[1024];
         if (!failure) {
             sprintf(buffer,
                     "%s\r\nConnection: %s\r\nServer: %s\r\nContent-Type: %s\r\nLast-Modified: %s\r\nDate: %s\r\nContent-Length: %d\r\n",
@@ -125,16 +125,16 @@ void GenerateResponse(int sock_fd) {
     ifstream stream(file_path);
     if ((S_ISDIR(buf.st_mode) && !status) || stream.fail()) {
         header_info.SetFailureMessage();
-        file_content = "<html><h1>404 Page Not Found</h1></html>";
+        file_content = "<html><h1>404 Not Found</h1></html>";
         header_info.content_length = file_content.length();
     } else {
         file_content.assign((istreambuf_iterator<char>(stream)),
                             (istreambuf_iterator<char>()));
         header_info.content_length = file_content.length();
 
-        auto i = uri.rfind('.');
-        if (i != string::npos) {
-            auto ext = uri.substr(i);
+        size_t ext_index = uri.find_last_of('.', string::npos);
+        if (ext_index != string::npos) {
+            string ext = uri.substr(ext_index);
             transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
             auto iter = ext_to_MIME.find(ext);
             if (iter != ext_to_MIME.end()) {
@@ -142,21 +142,21 @@ void GenerateResponse(int sock_fd) {
             }
         }
 
-        if (status == 0) {
-            char time_buffer[512];
+        if (!status) {
+            char time_buffer[1024];
             struct tm* time = gmtime(&buf.st_mtime);
-            status = strftime(time_buffer, 512, format_date.c_str(), time);
+            status = strftime(time_buffer, 1024, format_date.c_str(), time);
             if (status != 0) {
                 header_info.last_modified = string(time_buffer);
             }
         }
 
     } 
-    char time_buffer[512];
+    char time_buffer[1024];
     time_t current_time = time(nullptr);
     struct tm* time = gmtime(&current_time);
-    status = strftime(time_buffer, 512, format_date.c_str(), time);
-    if (status != 0) {
+    status = strftime(time_buffer, 1024, format_date.c_str(), time);
+    if (status) {
         header_info.date = string(time_buffer);
     }  
     auto response = header_info.GetResponse();
@@ -170,22 +170,23 @@ int main(int argc, char* argv[]) {
     socklen_t cli_len;
     struct sockaddr_in serv_addr, cli_addr;
     if (argc < 2) {
-        fprintf(stderr, "ERROR: No port provided\n");
+        fprintf(stderr, "usage: ./server <portnum>\n");
         exit(1);
     }
     
-    sock_fd = socket(AF_INET, SOCK_STREAM, 0);
+    sock_fd = socket(AF_INET, SOCK_STREAM, 0); // create socket
     if (sock_fd < 0) {
         error("ERROR opening socket.");
     }
-    memset((char*)&serv_addr, 0, sizeof(serv_addr));
+    memset((char *) &serv_addr, 0, sizeof(serv_addr)); // reset memory
 
+    // fill in address info
     port_no = atoi(argv[1]);
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_addr.s_addr = INADDR_ANY;
     serv_addr.sin_port = htons(port_no);
 
-    if (bind(sock_fd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
+    if (bind(sock_fd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
         error("Error on binding.");
     }
 

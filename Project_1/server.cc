@@ -93,7 +93,6 @@ void GenerateResponse(int sock_fd) {
     size_t start = 0;
     size_t end = request.find(' ', start);
     if (end == string::npos) { return; }
-    string method = request.substr(start, end - start);
 
     start = end + 1;
     end = request.find(' ', start);
@@ -112,13 +111,6 @@ void GenerateResponse(int sock_fd) {
         uri_start = uri_end + 3;
     }
     uri = uri_with_spaces;
-
-    start = end + 1;
-    end = request.find("\r\n", start);
-    if (end == string::npos) { return; }
-    string version = request.substr(start, end - start);
-    
-    start = end + 2;
 
     HeaderInfo header_info;
 
@@ -156,18 +148,18 @@ void GenerateResponse(int sock_fd) {
             }
         }
 
-        char time_buffer[512];
-        time_t current_time = time(nullptr);
-        struct tm* time = gmtime(&current_time);
-        status = strftime(time_buffer, 512, format_date.c_str(), time);
-        if (status != 0) {
-            header_info.date = string(time_buffer);
-        }
-    }
+    } 
+    char time_buffer[512];
+    time_t current_time = time(nullptr);
+    struct tm* time = gmtime(&current_time);
+    status = strftime(time_buffer, 512, format_date.c_str(), time);
+    if (status != 0) {
+        header_info.date = string(time_buffer);
+    }  
     auto response = header_info.GetResponse();
     response += "\r\n" + content;
     status = write(sock_fd, response.c_str(), response.length());
-    if (status < 0) { error("ERROR writing to socket."); }
+    if (status < 0) { error("error writing to socket."); }
 }
 
 int main(int argc, char* argv[]) {
@@ -231,7 +223,7 @@ int main(int argc, char* argv[]) {
         if (p_id < 0) {
             error("ERROR on fork.");
         }
-        
+ 
         if (p_id == 0) {
             close(sock_fd);
             GenerateResponse(new_sock_fd);

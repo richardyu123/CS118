@@ -1,19 +1,19 @@
 #include <algorithm>
 #include <errno.h>
 #include <fstream>
+#include <iostream>
+#include <netinet/in.h>
+#include <signal.h>
 #include <sstream>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <signal.h>
+#include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <sys/socket.h>
 #include <sys/wait.h>
-#include <netinet/in.h>
+#include <unistd.h>
 #include <unordered_map>
-#include <iostream>
 
 using namespace std;
 
@@ -77,57 +77,63 @@ void error(const char* msg) {
 }
 
 void GenerateResponse(int sock_fd) {
-    int n;
-    char req_buffer[512];
-    bzero(req_buffer, 512);
-    string request;
+    int num_bytes_read;
+    char req_buffer[1024];
+    bzero(req_buffer, 1024);
 
-    n = read(sock_fd, req_buffer, 511);
-    if (n < 0) {
-        error("ERROR reading from socket.");
+    // Read the request from the socket
+    num_bytes_read = read(sock_fd, req_buffer, 1023);
+    if (num_bytes_read < 0) {
+        error("ERROR reading from socket");
     }
 
-    request.append(req_buffer, n);
+    string request;
+    request.append(req_buffer, num_bytes_read);
     printf("%s", request.c_str());
 
-    size_t start = 0;
-    size_t end = request.find(' ', start);
-    if (end == string::npos) { return; }
+    size_t begin_location = 0;
+    size_t end_location = request.find(' ', begin_location);
+    if (end_location == string::npos) { return; }
 
-    start = end + 1;
-    end = request.find(' ', start);
-    if (end == string::npos) { return; }
-    string uri = request.substr(start, end - start);
+    // Parse the request to get the uri
+    begin_location = end_location + 1;
+    end_location = request.find(' ', begin_location);
+    if (end_location == string::npos) { return; }
+    string uri = request.substr(begin_location, end_location - begin_location);
+
+    // Convert "%20" to spaces in the uri
     string uri_with_spaces = "";
-    size_t uri_start = 0;
-    size_t uri_end = 0;
+    size_t uri_begin_location = 0;
+    size_t uri_end_location = 0;
     while (true) {
-        uri_end = uri.find("%20", uri_start);
-        if (uri_end == string::npos) {
-            uri_with_spaces += uri.substr(uri_start, uri_end);
+        uri_end_location = uri.find("%20", uri_begin_location);
+        if (uri_end_location == string::npos) {
+            uri_with_spaces += uri.substr(uri_begin_location, uri_end_location);
             break;
         }
-        uri_with_spaces += uri.substr(uri_start, uri_end - uri_start) + ' ';
-        uri_start = uri_end + 3;
+        uri_with_spaces += uri.substr(uri_begin_location, uri_end_location - uri_begin_location) + ' ';
+        uri_begin_location = uri_end_location + 3;
     }
     uri = uri_with_spaces;
 
     HeaderInfo header_info;
 
-    string path = "." + uri;
-    string content;
+    string file_path = '.' + uri;
+    string file_content;
     struct stat buf;
-    int status = stat(path.c_str(), &buf);
-    ifstream stream(path);
-    if (stream.fail() || (status == 0 && S_ISDIR(buf.st_mode))) {
+    int status = stat(file_path.c_str(), &buf);
+    ifstream stream(file_path);
+    if ((S_ISDIR(buf.st_mode) && !status) || stream.fail()) {
         header_info.SetFailureMessage();
-        content = "<html><h1>404 Page Not Found</h1></html>";
-        header_info.content_length = content.length();
+        file_content = "<html><h1>404 Page Not Found</h1></html>";
+        header_info.content_length = file_content.length();
     } else {
-        stringstream buffer;
-        buffer << stream.rdbuf();
-        content = buffer.str();
-        header_info.content_length = content.length();
+        file_content.assign((istreambuf_iterator<char>(stream)),
+                            (istreambuf_iterator<char>()));
+        //stringstream buffer;
+        //buffer << stream.rdbuf();
+        //content = buffer.str();
+        header_info.content_length = file_content.length();
 
         auto i = uri.rfind('.');
         if (i != string::npos) {
@@ -157,7 +163,7 @@ void GenerateResponse(int sock_fd) {
         header_info.date = string(time_buffer);
     }  
     auto response = header_info.GetResponse();
-    response += "\r\n" + content;
+    response += "\r\n" + file_content;
     status = write(sock_fd, response.c_str(), response.length());
     if (status < 0) { error("error writing to socket."); }
 }

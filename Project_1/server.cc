@@ -130,14 +130,11 @@ void GenerateResponse(int sock_fd) {
     } else {
         file_content.assign((istreambuf_iterator<char>(stream)),
                             (istreambuf_iterator<char>()));
-        //stringstream buffer;
-        //buffer << stream.rdbuf();
-        //content = buffer.str();
         header_info.content_length = file_content.length();
 
-        auto i = uri.rfind('.');
-        if (i != string::npos) {
-            auto ext = uri.substr(i);
+        size_t ext_index = uri.find_last_of('.', string::npos);
+        if (ext_index != string::npos) {
+            string ext = uri.substr(ext_index);
             transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
             auto iter = ext_to_MIME.find(ext);
             if (iter != ext_to_MIME.end()) {
@@ -146,19 +143,19 @@ void GenerateResponse(int sock_fd) {
         }
 
         if (status == 0) {
-            char time_buffer[512];
+            char time_buffer[1024];
             struct tm* time = gmtime(&buf.st_mtime);
-            status = strftime(time_buffer, 512, format_date.c_str(), time);
+            status = strftime(time_buffer, 1024, format_date.c_str(), time);
             if (status != 0) {
                 header_info.last_modified = string(time_buffer);
             }
         }
 
     } 
-    char time_buffer[512];
+    char time_buffer[1024];
     time_t current_time = time(nullptr);
     struct tm* time = gmtime(&current_time);
-    status = strftime(time_buffer, 512, format_date.c_str(), time);
+    status = strftime(time_buffer, 1024, format_date.c_str(), time);
     if (status != 0) {
         header_info.date = string(time_buffer);
     }  

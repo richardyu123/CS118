@@ -19,6 +19,7 @@ using namespace std;
 
 static string format_date = "%a, %d %b %Y %T GMT";
 
+// Structure that contains the HTTP Response fields.
 struct HeaderInfo {
     string header_line;
     string date;
@@ -29,6 +30,7 @@ struct HeaderInfo {
     string content_type;
     bool failure;
 
+    // Default header info.
     HeaderInfo() {
         header_line = "HTTP/1.1 200 OK";
         last_modified = date = "%a, %d %b %Y %T GMT";
@@ -38,6 +40,8 @@ struct HeaderInfo {
         content_type = "application/octet-stream";
         failure = false;
     }
+
+    // If requested file does not exist.
     void SetFailureMessage() {
         header_line = "HTTP/1.1 404 Not Found";
         connection = "close";
@@ -45,6 +49,7 @@ struct HeaderInfo {
         failure = true;
     }
 
+    // Builds the response based on the field information.
     string GetResponse() {
         char buffer[1024];
         if (!failure) {
@@ -64,6 +69,7 @@ struct HeaderInfo {
     }
 };
 
+// Maps file extension to MIME.
 const unordered_map<string, string> ext_to_MIME = {
     {".gif", "image/gif"},
     {".html", "text/html"},
@@ -118,11 +124,15 @@ void GenerateResponse(int sock_fd) {
 
     HeaderInfo header_info;
 
+    // File path is from current directory ('.').
     string file_path = '.' + uri;
     string file_content;
     struct stat buf;
     int status = stat(file_path.c_str(), &buf);
     ifstream stream(file_path);
+
+    // If failure, set failure = true, else build HTTP response from
+    // the content in the file.
     if ((S_ISDIR(buf.st_mode) && !status) || stream.fail()) {
         header_info.SetFailureMessage();
         file_content = "<html><h1>404 Not Found</h1></html>";
@@ -150,8 +160,9 @@ void GenerateResponse(int sock_fd) {
                 header_info.last_modified = string(time_buffer);
             }
         }
-
     } 
+
+    // Get current time and add that to HTTP response.
     char time_buffer[1024];
     time_t current_time = time(nullptr);
     struct tm* time = gmtime(&current_time);
@@ -161,6 +172,8 @@ void GenerateResponse(int sock_fd) {
     }  
     auto response = header_info.GetResponse();
     response += "\r\n" + file_content;
+
+    // Send response through socket.
     status = write(sock_fd, response.c_str(), response.length());
     if (status < 0) { error("error writing to socket."); }
 }
@@ -192,29 +205,6 @@ int main(int argc, char* argv[]) {
 
     listen(sock_fd, 5);
 
-   /*
-    * Part A.
-    *
-    new_sock_fd = accept(sock_fd, (struct sockaddr*)&cli_addr, &cli_len);
-
-    if (new_sock_fd < 0) {
-        error("ERROR on accept.");
-    }
-
-    int n;
-    char buffer[256];
-    memset(buffer, 0, 256);
-
-    n = read(new_sock_fd, buffer, 255);
-    if (n < 0) { error("ERROR reading from socket."); }
-    printf("Here is the message: %s\n", buffer);
-
-    n = write(new_sock_fd, "I got your message", 18);
-    if (n < 0) { error("ERROR writing to socket"); }
-    */
-
-    // Part B.
-
     int p_id;
     while (true) {
         new_sock_fd = accept(sock_fd, (struct sockaddr*)&cli_addr, &cli_len);
@@ -223,6 +213,8 @@ int main(int argc, char* argv[]) {
             error("ERROR on accept.");
         }
 
+        // One process generates the response, while the other listens for
+        // requests.
         p_id = fork();
         if (p_id < 0) {
             error("ERROR on fork.");

@@ -1,10 +1,11 @@
 namespace constants {
 // Size in bytes.
-const uint32_t max_packet_len = 1024;
-const uint32_t max_seq_num = 30720;
-const uint32_t window_size = 5120;
+const final uint32_t MAX_PACKET_SIZE = 1024;
+const final uint32_t MAX_SEQ_NUM = 30720;
+const final uint32_t WINDOW_SIZE = 5120;
+const final uint32_t HEADER_SIZE = 8; 
 
 // Times.
-const uint32_t retrans_timeout = 500;
-const uint32_t retrans_timeout_us = retrans_timeout * 1000;
+const final uint32_t RETRANS_TIMEOUT = 500;
+const final uint32_t RETRANS_TIMEOUT_us = retrans_timeout * 1000;
 }

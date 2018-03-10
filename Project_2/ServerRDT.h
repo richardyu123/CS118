@@ -14,7 +14,7 @@ protected:
     virtual void Finish();
 
 private:
-    
+    Packet* front_packet;    
 };
 
 #endif

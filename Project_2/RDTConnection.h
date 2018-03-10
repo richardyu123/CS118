@@ -5,18 +5,21 @@
 #include <string>
 #include <sys/socket.h>
 
+#include "Packet.h"
+
 class RDTConnection {
 public:
     RDTConnection(const int sock_fd);
     ~RDTConnection();
 
     RDTConnection& SendMessage(const std::string& input);
-    void Read(const std::string& str, size_t num_bytes);
+    void Read(std::string& str, size_t num_bytes);
 
     bool connected() const;
 protected:
     bool ConfigureTimeout(int sec, int usec);
     void PrintErrorAndDC(const std::string& msg);
+    Packet* front_packet;
 
     socklen_t cli_len;
     struct sockaddr_in cli_addr;

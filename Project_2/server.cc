@@ -7,6 +7,7 @@
 #include <unistd.h>
 
 #include "Constants.h"
+#include "ServerRDT.h"
 
 using namespace std;
 
@@ -31,7 +32,8 @@ int main(int argc, char** argv) {
     }
 
     while(true) {
-
+        ServerRDT serv_conn(sock_fd);
+        if (!serv_conn.connected()) { continue; }
     }
 
     close(sock_fd);

@@ -15,13 +15,11 @@ RDTConnection::RDTConnection(const int sock_fd)
 
 RDTConnection::~RDTConnection() {}
 
-RDTConnection& RDTConnection::SendMessage(const string& input) {
-    ssize_t len;
-    char buffer[256];
-
-    // Sequence to packet sizes.
-    unordered_map<uint64_t, size_t> pckt_sizes;
+void RDTConnection::Read(string& str, size_t count) {
+    str.resize(count);
 }
+
+bool RDTConnection::connected() const { return is_connected; }
 
 bool RDTConnection::ConfigureTimeout(int sec, int usec) {
     struct timeval t_val;

@@ -50,6 +50,33 @@ void ServerRDT::Handshake() {
             PrintErrorAndDC("Recvfrom failure.");
         }
     }
+
+    if (!ConfigureTimeout(0, constants::RETRANS_TIMEOUT_us)) { return; }
+
+    Packet pkt(Packet::SYNACK, next_seq_num, constants::WINDOW_SIZE, nullptr,
+               0);
+    bool retrans = false;
+
+    while (true) {
+        sendto(sock_fd, pkt.GetData().data(), pkt.GetDataLength(), 0,
+               (struct sockaddr*)&cli_addr, cli_len);
+        len = recvfrom(sock_fd, buffer, constants::MAX_PACKET_LEN, 0,
+                       (struct sockaddr*)&cli_addr, &cli_len);
+        if (len > 0) {
+            Packet pkt2(buffer, len);
+            if (pkt2.GetPacketType() == Packet::SYN) {
+                retrans = true;
+                continue;
+            } else if (pkt2.GetPacketType() != Packet::ACK) {
+                front_packet = new Packet(pkt2);
+            }
+            break;
+        } else {
+            retrans = true;
+        }
+    }
+
+    send_base++;
 }
 
 // Sends FIN.

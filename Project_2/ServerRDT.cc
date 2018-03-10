@@ -44,10 +44,10 @@ void ServerRDT::Handshake() {
                        (struct sockaddr*)&cli_addr, cli_len);
                 continue;
             } else {
-                PrintErrorAndDC("Unexpected packet -- not SYN or FIN.");
+                PrintErrorAndDC("Unexpected packet -- not SYN or FIN");
             }
         } else {
-            PrintErrorAndDC("Recvfrom failure.");
+            PrintErrorAndDC("Recvfrom failure");
         }
     }
 

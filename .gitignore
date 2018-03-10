@@ -1,2 +1,6 @@
 server
 client
+test
+*.o
+*.d
+project_2

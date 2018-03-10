@@ -13,8 +13,6 @@ protected:
     virtual void Handshake();
     virtual void Finish();
 
-private:
-    Packet* front_packet;    
 };
 
 #endif

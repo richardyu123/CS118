@@ -15,7 +15,8 @@ public:
 
     bool connected() const;
 protected:
-    void ConfigureTimeout(int sec, int usec);
+    bool ConfigureTimeout(int sec, int usec);
+    void PrintErrorAndDC(const std::string& msg);
 
     socklen_t cli_len;
     struct sockaddr_in cli_addr;

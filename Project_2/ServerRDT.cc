@@ -19,6 +19,8 @@ ServerRDT::~ServerRDT() {
 void ServerRDT::Handshake() {
     ssize_t len;
     char buffer[constants::MAX_PACKET_LEN];
+
+    
 }
 
 // Sends FIN.

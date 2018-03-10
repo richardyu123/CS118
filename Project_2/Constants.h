@@ -1,4 +1,13 @@
+#ifndef CONSTANTS_H
+#define CONSTANTS_H
+
+#include <stdio.h>
+#include <string>
 #include <stdint.h>
+
+namespace util {
+void exit_on_error(const std::string& msg); 
+}
 
 namespace constants {
 // Size in bytes.
@@ -11,3 +20,5 @@ const static uint32_t HEADER_SIZE = 8;
 const static uint32_t RETRANS_TIMEOUT = 500;
 const static uint32_t RETRANS_TIMEOUT_us = RETRANS_TIMEOUT * 1000;
 }
+
+#endif

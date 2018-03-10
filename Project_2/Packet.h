@@ -1,3 +1,6 @@
+#ifndef PACKET_H
+#define PACKET_H
+
 #include <stdint.h>
 #include <string>
 #include <unistd.h>
@@ -39,3 +42,5 @@ private:
     size_t data_length;
     bool valid;
 };
+
+#endif

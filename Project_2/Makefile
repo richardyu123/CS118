@@ -1,7 +1,7 @@
 CXX = g++
 FLAGS = -Wall -Wextra -std=c++11
 DIR = ./project_2
-BASE_CC = Packet.cc RDTConnection.cc
+BASE_CC = Packet.cc RDTConnection.cc Constants.cc
 TEST_CC = PacketTest.cc
 CLIENT_CC = client.cc
 SERVER_CC = server.cc ServerRDT.cc

@@ -3,7 +3,7 @@ FLAGS = -Wall -Wextra -std=c++11
 DIR = ./project_2
 BASE_CC = Packet.cc RDTConnection.cc Constants.cc
 TEST_CC = PacketTest.cc
-CLIENT_CC = client.cc
+CLIENT_CC = client.cc ClientRDT.cc
 SERVER_CC = server.cc ServerRDT.cc
 BASE_O = $(BASE_CC:%.cc=$(DIR)/%.o)
 TEST_O = $(TEST_CC:%.cc=$(DIR)/%.o)

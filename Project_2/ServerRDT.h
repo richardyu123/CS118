@@ -8,4 +8,4 @@ public:
 protected:
     virtual void Handshake();
     virtual void Finish();
-}
+};

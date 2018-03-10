@@ -1,13 +1,14 @@
+#include <stdlib.h>
+#include <unordered_map>
+
 #include "RDTConnection.h"
 
-RDTConnection::RDTConnection(const int sock_fd)
-    : cli_len(sizeof(cli_addr), sock_fd(sock_fd), is_connected(true) {
-    Handshake();
-}
+using namespace std;
 
-RDTConnection::~RDTConnection() {
-    if (is_connected) { Finish(); }
-}
+RDTConnection::RDTConnection(const int sock_fd)
+    : cli_len(sizeof(cli_addr)), sock_fd(sock_fd), is_connected(true) {}
+
+RDTConnection::~RDTConnection() {}
 
 RDTConnection& RDTConnection::SendMessage(const string& input) {
     ssize_t len;

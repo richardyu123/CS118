@@ -1,4 +1,6 @@
+#include <stdint.h>
 #include <string>
+#include <unistd.h>
 
 using namespace std;
 
@@ -12,15 +14,26 @@ public:
         SYNACK = 0b11000000
     } packet_t;
 
-    Packet(packet_t packet_type, uint16_t packet_num, uint16_t window_num,
+    Packet(packet_t packet_type, uint16_t packet_num, uint16_t window_size,
            char* data, size_t data_length);
     Packet();
-    
+
+    // Getters.
+    packet_t GetPacketType() const;
+    uint16_t GetPacketNumber() const;
+    uint16_t GetWindowSize() const;
+    bool isValid() const;
+    string GetData() const;
+    const string& GetPacketData() const;
+    size_t GetDataLength() const;
+    size_t GetPacketLength() const;
 private:
-    string packet_data;
-    size_t data_length;
+    void FillHeader();
+
     packet_t packet_type;
     uint16_t packet_num;
-    uint16_t window_num;
+    uint16_t window_size;
+    string packet_data;
+    size_t data_length;
     bool valid;
 };

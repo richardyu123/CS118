@@ -1,4 +1,5 @@
 #include <chrono>
+#include <iostream>
 #include <stdlib.h>
 #include <unordered_map>
 
@@ -52,6 +53,7 @@ void RDTConnection::Read(string& str, size_t count) {
                 len = recvfrom(sock_fd, buffer, constants::MAX_PACKET_LEN,
                                0, (struct sockaddr*)&cli_addr, &cli_len);
                 pkt = Packet(buffer, len);
+                PrintPacketInfo(pkt, RECEIVER, false);
             }
             if (pkt.GetPacketType() != Packet::NONE) { continue; }
 
@@ -91,6 +93,7 @@ void RDTConnection::Read(string& str, size_t count) {
 
                 Packet acket(Packet::ACK, pkt.GetPacketNumber(),
                              constants::WINDOW_SIZE, nullptr, 0);
+                PrintPacketInfo(acket, SENDER, retrans);
                 sendto(sock_fd, acket.GetPacketData().data(),
                        acket.GetPacketLength(), 0, (struct sockaddr*)&cli_addr,
                        cli_len);
@@ -114,6 +117,7 @@ void RDTConnection::Read(string& str, size_t count) {
             } else {
                 Packet acket(Packet::ACK, pkt.GetPacketNumber(),
                              constants::WINDOW_SIZE, nullptr, 0);
+                PrintPacketInfo(acket, SENDER, (seq_num < receive_base));
                 sendto(sock_fd, acket.GetPacketData().data(),
                        acket.GetPacketLength(), 0, (struct sockaddr*)&cli_addr,
                        cli_len);
@@ -138,4 +142,22 @@ bool RDTConnection::ConfigureTimeout(int sec, int usec) {
 void RDTConnection::PrintErrorAndDC(const string& msg) {
     fprintf(stderr, "ERROR: %s.\n", msg.c_str());
     is_connected = false;
+}
+
+void RDTConnection::PrintPacketInfo(const Packet& packet, rec_or_sender_t rs,
+                                    bool retrans) {
+    if (rs == RECEIVER) {
+        cout << "Receiving";
+    } else {
+        cout << "Sending";
+    }
+    cout << " packet" << " " << packet.GetPacketNumber() <<
+        " " << packet.GetWindowSize();
+    if (retrans) {
+        cout << " Retransmission";
+    }
+    if (packet.GetPacketType() != Packet::NONE) {
+        cout << " " << packet.TypeToString();
+    }
+    cout << endl;
 }

@@ -23,9 +23,17 @@ public:
     void Read(std::string& str, size_t num_bytes);
 
     bool connected() const;
-protected:
+protected:    
+    typedef enum ReceiverOrSender {
+        SENDER,
+        RECEIVER
+    } rec_or_sender_t;
+
     bool ConfigureTimeout(int sec, int usec);
     void PrintErrorAndDC(const std::string& msg);
+    void PrintPacketInfo(const Packet& packet, rec_or_sender_t rs,
+                         bool retrans);
+
     Packet* front_packet;
     std::list<packet_seq_t> received;
 

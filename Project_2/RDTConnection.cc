@@ -165,7 +165,12 @@ void RDTConnection::Write(string filename) {
             
             Packet pkt = Packet(Packet::NONE, next_seq_num % constants::WINDOW_SIZE, constants::WINDOW_SIZE, buf, data_size);
             
-            // TODO: update data structures
+            packet_list.push_back(next_seq_num);
+            packets[next_seq_num] = pkt;
+            
+            auto duration = system_clock::now().time_since_epoch();
+            auto timestamp = duration_cast<milliseconds>(duration);
+            timestamps[next_seq_num] = timestamp;
             
             SendPacket(pkt);
             next_seq_num += data_size;
@@ -176,6 +181,12 @@ void RDTConnection::Write(string filename) {
         }
         
         // Step 4
+        while (acks.count(send_base) != 0 && acks[send_base]) {
+            uint16_t tmp = send_base;
+            send_base += packets[send_base].GetDataLength();
+            acks[tmp] = false;
+            packets.erase(tmp);
+        }
     }
 }
 

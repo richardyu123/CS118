@@ -138,7 +138,7 @@ void RDTConnection::Write(string filename) {
     ifstream inFile;
     inFile.open(filename);
     
-    if(!ConfigureTimeout(0, constants::RETRANS_TIMEOUT_us)) {
+    if (!ConfigureTimeout(0, constants::RETRANS_TIMEOUT_us)) {
         return;
     }
     
@@ -149,6 +149,20 @@ void RDTConnection::Write(string filename) {
     list<uint64_t> packet_list; // List of packets' seq_nums.
     
     while (true) {
+        // Step 1 
+        milliseconds cur_time;
+        for (auto seq_n : packet_list) {
+            cur_time = duration_cast<milliseconds>(
+                    system_clock::now().time_since_epoch());
+            if (abs(duration_cast<milliseconds>(
+                            cur_time - timestamps[seq_n]).count()) >=
+                static_cast<int>(constants::RETRANS_TIMEOUT)) {
+                PrintPacketInfo(packets[seq_n], SENDER, true);
+                timestamps[seq_n] = duration_cast<milliseconds>(
+                        system_clock::now().time_since_epoch());
+                SendPacket(packets[seq_n]);
+            }
+        }
 
         // Step 2
         bool done_sending = false;

@@ -1,4 +1,5 @@
 #include <chrono>
+#include <fstream>
 #include <iostream>
 #include <stdlib.h>
 #include <unordered_map>
@@ -130,10 +131,9 @@ void RDTConnection::Read(string& str, size_t count) {
     }
 }
 
-void RDTConnection::Write() {
-    string filename = "hello.txt";
+void RDTConnection::Write(string filename) {
     ifstream inFile;
-    inFile.open(filename)
+    inFile.open(filename);
     
     if(!ConfigureTimeout(0, constants::RETRANS_TIMEOUT_us)) {
         return;
@@ -156,11 +156,11 @@ void RDTConnection::Write() {
                 inFile.read(buf, data_size);
             }
             
-            Packet pkt = Packet(Packet::NONE, next_seq_num % constants::WINDOW_SIZE, buf, data_size);
+            Packet pkt = Packet(Packet::NONE, next_seq_num % constants::WINDOW_SIZE, constants::WINDOW_SIZE, buf, data_size);
             
             // TODO: update data structures
             
-            SendPacket();
+            SendPacket(pkt);
             next_seq_num += data_size;
         }
         

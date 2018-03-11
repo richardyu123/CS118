@@ -33,7 +33,7 @@ string Packet::TypeToString() const {
     case SYNACK:
         return "SYNACK";
     default:
-        return "NONE";
+        return "";
     }
 }
 

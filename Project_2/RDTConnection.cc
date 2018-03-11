@@ -1,4 +1,5 @@
 #include <chrono>
+#include <iostream>
 #include <stdlib.h>
 #include <unordered_map>
 
@@ -15,7 +16,11 @@ RDTConnection::RDTConnection(const int sock_fd)
     : cli_len(sizeof(cli_addr)), sock_fd(sock_fd), is_connected(true),
       offset(0), next_seq_num(0), send_base(0), receive_base(0) {}
 
-RDTConnection::~RDTConnection() {}
+RDTConnection::~RDTConnection() {
+    if (front_packet != nullptr) {
+        delete front_packet;
+    }
+}
 
 void RDTConnection::Read(string& str, size_t count) {
     str.resize(count);
@@ -52,6 +57,7 @@ void RDTConnection::Read(string& str, size_t count) {
                 len = recvfrom(sock_fd, buffer, constants::MAX_PACKET_LEN,
                                0, (struct sockaddr*)&cli_addr, &cli_len);
                 pkt = Packet(buffer, len);
+                PrintPacketInfo(pkt, RECEIVER, false);
             }
             if (pkt.GetPacketType() != Packet::NONE) { continue; }
 
@@ -91,6 +97,7 @@ void RDTConnection::Read(string& str, size_t count) {
 
                 Packet acket(Packet::ACK, pkt.GetPacketNumber(),
                              constants::WINDOW_SIZE, nullptr, 0);
+                PrintPacketInfo(acket, SENDER, retrans);
                 sendto(sock_fd, acket.GetPacketData().data(),
                        acket.GetPacketLength(), 0, (struct sockaddr*)&cli_addr,
                        cli_len);
@@ -114,6 +121,7 @@ void RDTConnection::Read(string& str, size_t count) {
             } else {
                 Packet acket(Packet::ACK, pkt.GetPacketNumber(),
                              constants::WINDOW_SIZE, nullptr, 0);
+                PrintPacketInfo(acket, SENDER, (seq_num < receive_base));
                 sendto(sock_fd, acket.GetPacketData().data(),
                        acket.GetPacketLength(), 0, (struct sockaddr*)&cli_addr,
                        cli_len);
@@ -173,11 +181,30 @@ bool RDTConnection::ConfigureTimeout(int sec, int usec) {
 
     auto rc = setsockopt(sock_fd, SOL_SOCKET, SO_RCVTIMEO, &t_val,
                           sizeof(t_val));
-    if (rc != 0) { PrintErrorAndDC("Setting timeout value."); }
+    if (rc != 0) { PrintErrorAndDC("Setting timeout value"); }
     return (rc == 0);
 }
 
 void RDTConnection::PrintErrorAndDC(const string& msg) {
     fprintf(stderr, "ERROR: %s.\n", msg.c_str());
     is_connected = false;
+}
+
+void RDTConnection::PrintPacketInfo(const Packet& packet, rec_or_sender_t rs,
+                                    bool retrans) {
+    if (rs == RECEIVER) {
+        retrans = false;
+        cout << "Receiving";
+    } else { // rs == SENDER.
+        cout << "Sending";
+    }
+    cout << " packet" << " " << packet.GetPacketNumber() <<
+        " " << packet.GetWindowSize();
+    if (retrans) {
+        cout << " Retransmission";
+    }
+    if (packet.GetPacketType() != Packet::NONE) {
+        cout << " " << packet.TypeToString();
+    }
+    cout << endl;
 }

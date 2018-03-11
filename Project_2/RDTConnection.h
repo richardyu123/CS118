@@ -24,11 +24,18 @@ public:
     void Write();
 
     bool connected() const;
-protected:
+protected:    
+    typedef enum ReceiverOrSender {
+        SENDER,
+        RECEIVER
+    } rec_or_sender_t;
+
     bool ConfigureTimeout(int sec, int usec);
     void PrintErrorAndDC(const std::string& msg);
+    void PrintPacketInfo(const Packet& packet, rec_or_sender_t rs,
+                         bool retrans);
+
     Packet* front_packet;
-    std::list<packet_seq_t> received;
 
     socklen_t cli_len;
     struct sockaddr_in cli_addr;
@@ -38,9 +45,11 @@ protected:
     uint16_t next_seq_num;
     uint16_t send_base;
     uint16_t receive_base;
+    virtual void SendPacket() = 0;
     virtual void Handshake() = 0;
     virtual void Finish() = 0;
-    virtual void SendPacket() = 0;
+private:
+    std::list<packet_seq_t> received;
 };
 
 #endif

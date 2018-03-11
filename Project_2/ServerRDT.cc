@@ -25,16 +25,17 @@ ServerRDT::~ServerRDT() {
 
 // Receives the handshake.
 void ServerRDT::Handshake() {
-    ssize_t len;
+    ssize_t num_bytes;
     char buffer[constants::MAX_PACKET_LEN];
 
     if(!ConfigureTimeout(0, 0)) { return; }
 
     while (true) {
-        len = recvfrom(sock_fd, buffer, constants::MAX_PACKET_LEN, 0,
+        // Read packet from socket.
+        num_bytes = recvfrom(sock_fd, buffer, constants::MAX_PACKET_LEN, 0,
                        (struct sockaddr*)&cli_addr, &cli_len);
-        if (len > 0) {
-            Packet pkt(buffer, len);
+        if (num_bytes > 0) {
+            Packet pkt(buffer, num_bytes);
             PrintPacketInfo(pkt, RECEIVER, false);
             if (pkt.GetPacketType() == Packet::SYN) {
                 receive_base = pkt.GetPacketNumber() + 1;
@@ -56,6 +57,7 @@ void ServerRDT::Handshake() {
     }
     if (!ConfigureTimeout(0, constants::RETRANS_TIMEOUT_us)) { return; }
 
+    // Generate and send SYNACK packet.
     Packet pkt(Packet::SYNACK, next_seq_num, constants::WINDOW_SIZE, nullptr,
                0);
     bool retrans = false;
@@ -64,10 +66,11 @@ void ServerRDT::Handshake() {
         PrintPacketInfo(pkt, SENDER, retrans);
         sendto(sock_fd, pkt.GetPacketData().data(), pkt.GetPacketLength(), 0,
                (struct sockaddr*)&cli_addr, cli_len);
-        len = recvfrom(sock_fd, buffer, constants::MAX_PACKET_LEN, 0,
+        // Expect ACK.
+        num_bytes = recvfrom(sock_fd, buffer, constants::MAX_PACKET_LEN, 0,
                        (struct sockaddr*)&cli_addr, &cli_len);
-        if (len > 0) {
-            pkt = Packet(buffer, len);
+        if (num_bytes > 0) {
+            pkt = Packet(buffer, num_bytes);
             PrintPacketInfo(pkt, RECEIVER, false);
             if (pkt.GetPacketType() == Packet::SYN) {
                 retrans = true;
@@ -174,5 +177,4 @@ void ServerRDT::Finish() {
     }
 
     receive_base++;
-    return;
 }

@@ -16,7 +16,11 @@ RDTConnection::RDTConnection(const int sock_fd)
     : cli_len(sizeof(cli_addr)), sock_fd(sock_fd), is_connected(true),
       offset(0), next_seq_num(0), send_base(0), receive_base(0) {}
 
-RDTConnection::~RDTConnection() {}
+RDTConnection::~RDTConnection() {
+    if (front_packet != nullptr) {
+        delete front_packet;
+    }
+}
 
 void RDTConnection::Read(string& str, size_t count) {
     str.resize(count);
@@ -135,7 +139,7 @@ bool RDTConnection::ConfigureTimeout(int sec, int usec) {
 
     auto rc = setsockopt(sock_fd, SOL_SOCKET, SO_RCVTIMEO, &t_val,
                           sizeof(t_val));
-    if (rc != 0) { PrintErrorAndDC("Setting timeout value."); }
+    if (rc != 0) { PrintErrorAndDC("Setting timeout value"); }
     return (rc == 0);
 }
 
@@ -147,8 +151,9 @@ void RDTConnection::PrintErrorAndDC(const string& msg) {
 void RDTConnection::PrintPacketInfo(const Packet& packet, rec_or_sender_t rs,
                                     bool retrans) {
     if (rs == RECEIVER) {
+        retrans = false;
         cout << "Receiving";
-    } else {
+    } else { // rs == SENDER.
         cout << "Sending";
     }
     cout << " packet" << " " << packet.GetPacketNumber() <<

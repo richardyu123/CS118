@@ -35,7 +35,6 @@ protected:
                          bool retrans);
 
     Packet* front_packet;
-    std::list<packet_seq_t> received;
 
     socklen_t cli_len;
     struct sockaddr_in cli_addr;
@@ -47,6 +46,8 @@ protected:
     uint16_t receive_base;
     virtual void Handshake() = 0;
     virtual void Finish() = 0;
+private:
+    std::list<packet_seq_t> received;
 };
 
 #endif

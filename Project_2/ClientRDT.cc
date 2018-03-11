@@ -1,7 +1,6 @@
 #include <iostream>
 #include <string>
 
-
 #include "ClientRDT.h"
 #include "Constants.h"
 #include "Packet.h"
@@ -9,8 +8,13 @@
 ClientRDT::ClientRDT(const int sock_fd) : RDTConnection(sock_fd) {
     Handshake();
 }
+
 ClientRDT::~ClientRDT() {
     if (is_connected) { Finish(); }
+}
+
+void ClientRDT::SendPacket(Packet packet) {
+    write(sock_fd, packet.GetPacketData().c_str(), packet.GetPacketLength());
 }
 
 void ClientRDT::Handshake() {

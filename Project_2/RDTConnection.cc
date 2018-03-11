@@ -122,6 +122,48 @@ void RDTConnection::Read(string& str, size_t count) {
     }
 }
 
+void RDTConnection::Write() {
+    string filename = "hello.txt";
+    ifstream inFile;
+    inFile.open(filename)
+    
+    if(!ConfigureTimeout(0, constants::RETRANS_TIMEOUT_us)) {
+        return;
+    }
+    
+    // Data structures
+    unordered_map<uint64_t, bool> acks;
+    
+    while (true) {
+        // Step 2
+        bool done_sending = false;
+        while (next_seq_num < send_base + constants::WINDOW_SIZE) {
+            size_t data_size = min(constants::MAX_PACKET_LEN - constants::HEADER_SIZE, send_base + constants::WINDOW_SIZE - next_seq_num);
+            if (data_size == 0) {
+                done_sending = true;
+                break;
+            }
+            char buf[data_size];
+            if (inFile.is_open()) {
+                inFile.read(buf, data_size);
+            }
+            
+            Packet pkt = Packet(Packet::NONE, next_seq_num % constants::WINDOW_SIZE, buf, data_size);
+            
+            // TODO: update data structures
+            
+            SendPacket();
+            next_seq_num += data_size;
+        }
+        
+        if (done_sending) {
+            break;
+        }
+        
+        // Step 4
+    }
+}
+
 bool RDTConnection::connected() const { return is_connected; }
 
 bool RDTConnection::ConfigureTimeout(int sec, int usec) {

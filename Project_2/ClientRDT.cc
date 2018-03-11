@@ -10,6 +10,11 @@ ClientRDT::ClientRDT(const int sock_fd) : RDTConnection(sock_fd) {
     Handshake();
 }
 ClientRDT::~ClientRDT() {}
+
+void ClientRDT::SendPacket(Packet packet) {
+    write(sock_fd, packet.GetPacketData().c_str(), packet.GetPacketLength());
+}
+
 void ClientRDT::Handshake() {
     char buf[constants::MAX_PACKET_LEN];
     next_seq_num = 0;

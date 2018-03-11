@@ -62,6 +62,7 @@ int main(int argc, char** argv) {
         }
     }
 
+    fprintf(stderr, "closing socket\n");
     close(sock_fd);
     return 0;
 }

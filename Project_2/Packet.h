@@ -22,6 +22,8 @@ public:
     Packet(char* full_data, size_t data_length);
     Packet();
 
+    string TypeToString() const;
+
     // Getters.
     packet_t GetPacketType() const;
     uint16_t GetPacketNumber() const;

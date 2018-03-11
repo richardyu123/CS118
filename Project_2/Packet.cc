@@ -2,13 +2,17 @@
 
 #include "Packet.h"
 
+#include <stdio.h>
+
 Packet::Packet(packet_t packet_type, uint16_t packet_num, uint16_t window_size,
                char* data, size_t data_length)
     : packet_type(packet_type), packet_num(packet_num), window_size(window_size),
       data_length(data_length), valid(true) {
     packet_data.resize(constants::HEADER_SIZE + data_length);
     FillHeader();
-    packet_data.replace(constants::HEADER_SIZE, data_length, data);
+    if (data_length != 0) {
+        packet_data.replace(constants::HEADER_SIZE, data_length, data);
+    }
 }
 
 Packet::Packet(char* full_data, size_t data_length)
@@ -17,6 +21,21 @@ Packet::Packet(char* full_data, size_t data_length)
 }
 
 Packet::Packet() : valid(false) {}
+
+string Packet::TypeToString() const {
+    switch(packet_type) {
+    case SYN:
+        return "SYN";
+    case ACK:
+        return "ACK";
+    case FIN:
+        return "FIN";
+    case SYNACK:
+        return "SYNACK";
+    default:
+        return "NONE";
+    }
+}
 
 Packet::packet_t Packet::GetPacketType() const { return packet_type; }
 

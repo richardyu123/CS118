@@ -1,3 +1,4 @@
+#include <iostream>
 #include <stdint.h>
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -38,9 +39,9 @@ void ServerRDT::Handshake() {
                 break;
             } else if (pkt.GetPacketType() == Packet::FIN) {
                 // Unexpected FIN.
-                Packet pkt2(Packet::ACK, pkt.GetPacketNumber(),
+                pkt = Packet(Packet::ACK, pkt.GetPacketNumber(),
                             constants::WINDOW_SIZE, nullptr, 0);
-                sendto(sock_fd, pkt2.GetData().data(), pkt2.GetDataLength(), 0,
+                sendto(sock_fd, pkt.GetPacketData().data(), pkt.GetPacketLength(), 0,
                        (struct sockaddr*)&cli_addr, cli_len);
                 continue;
             } else {
@@ -50,7 +51,6 @@ void ServerRDT::Handshake() {
             PrintErrorAndDC("Recvfrom failure");
         }
     }
-
     if (!ConfigureTimeout(0, constants::RETRANS_TIMEOUT_us)) { return; }
 
     Packet pkt(Packet::SYNACK, next_seq_num, constants::WINDOW_SIZE, nullptr,
@@ -58,17 +58,20 @@ void ServerRDT::Handshake() {
     bool retrans = false;
 
     while (true) {
-        sendto(sock_fd, pkt.GetData().data(), pkt.GetDataLength(), 0,
+        std::cout << "Sending packet of type: " << pkt.TypeToString() << endl;
+        len = sendto(sock_fd, pkt.GetPacketData().data(), pkt.GetPacketLength(), 0,
                (struct sockaddr*)&cli_addr, cli_len);
         len = recvfrom(sock_fd, buffer, constants::MAX_PACKET_LEN, 0,
                        (struct sockaddr*)&cli_addr, &cli_len);
         if (len > 0) {
-            Packet pkt2(buffer, len);
-            if (pkt2.GetPacketType() == Packet::SYN) {
+            pkt = Packet(buffer, len);
+            std::cout << "Received packet of type: " << pkt.TypeToString() <<
+                endl;
+            if (pkt.GetPacketType() == Packet::SYN) {
                 retrans = true;
                 continue;
-            } else if (pkt2.GetPacketType() != Packet::ACK) {
-                front_packet = new Packet(pkt2);
+            } else if (pkt.GetPacketType() != Packet::ACK) {
+                front_packet = new Packet(pkt);
             }
             break;
         } else {

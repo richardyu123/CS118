@@ -50,6 +50,7 @@ protected:
     virtual void Finish() = 0;
 private:
     std::list<packet_seq_t> received;
+    uint64_t Floor(uint64_t num);
 };
 
 #endif

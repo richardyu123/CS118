@@ -189,7 +189,44 @@ void RDTConnection::Write(string filename) {
             break;
         }
         
-        // Step 4
+        // Step 3
+        char buffer[constants::MAX_PACKET_LEN];
+        auto num_bytes = recvfrom(sock_fd, buffer, constants::MAX_PACKET_LEN,
+                                  0, (struct sockaddr*)&cli_addr, &cli_len);
+
+        if (num_bytes > 0) {
+            Packet pkt(buffer, num_bytes);
+
+            if (pkt.GetPacketType() == Packet::ACK) {
+                auto ack_num = pkt.GetPacketNumber() + Floor(send_base);
+                auto curr_seq = send_base % constants::MAX_SEQ_NUM;
+                if (curr_seq + constants::WINDOW_SIZE >
+                        constants::MAX_SEQ_NUM) {
+                    if (pkt.GetPacketNumber() < curr_seq &&
+                            pkt.GetPacketNumber() <= constants::WINDOW_SIZE) {
+                        ack_num = pkt.GetPacketNumber() + send_base +
+                            constants::MAX_SEQ_NUM - curr_seq;
+                    }
+                }
+
+                if (send_base <= ack_num && ack_num <= send_base +
+                        constants::WINDOW_SIZE) {
+                    PrintPacketInfo(pkt, RECEIVER, false);
+                    acks[ack_num] = true;
+                    // NB: Might cause error if two of the same ack_nums are in the list.
+                    packet_list.remove(ack_num);
+                    timestamps.erase(ack_num);
+                }
+            } else {
+                PrintPacketInfo(pkt, RECEIVER, false);
+                auto ack_num = pkt.GetPacketNumber();
+                if (ack_num == receive_base % constants::MAX_SEQ_NUM) {
+                    front_packet = new Packet(pkt);
+                    return;
+                }
+            }
+        }
+
     }
 }
 
@@ -228,4 +265,10 @@ void RDTConnection::PrintPacketInfo(const Packet& packet, rec_or_sender_t rs,
         cout << " " << packet.TypeToString();
     }
     cout << endl;
+}
+
+uint64_t RDTConnection::Floor(uint64_t num) {
+    auto rem = num % constants::MAX_SEQ_NUM;
+    if (rem) { return num - rem; }
+    return num;
 }

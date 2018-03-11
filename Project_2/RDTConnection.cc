@@ -1,4 +1,5 @@
 #include <chrono>
+#include <fstream>
 #include <iostream>
 #include <list>
 #include <stdlib.h>
@@ -133,12 +134,11 @@ void RDTConnection::Read(string& str, size_t count) {
     }
 }
 
-void RDTConnection::Write() {
-    string filename = "hello.txt";
+void RDTConnection::Write(string filename) {
     ifstream inFile;
-    inFile.open(filename)
+    inFile.open(filename);
     
-    if(!ConfigureTimeout(0, constants::RETRANS_TIMEOUT_us)) {
+    if (!ConfigureTimeout(0, constants::RETRANS_TIMEOUT_us)) {
         return;
     }
     
@@ -149,7 +149,7 @@ void RDTConnection::Write() {
     list<uint64_t> packet_list; // List of packets' seq_nums.
     
     while (true) {
-        // Step 
+        // Step 1 
         milliseconds cur_time;
         for (auto seq_n : packet_list) {
             cur_time = duration_cast<milliseconds>(
@@ -157,7 +157,7 @@ void RDTConnection::Write() {
             if (abs(duration_cast<milliseconds>(
                             cur_time - timestamps[seq_n]).count()) >=
                 static_cast<int>(constants::RETRANS_TIMEOUT)) {
-                PrintPacketInfo(pkt, SENDER, true);
+                PrintPacketInfo(packets[seq_n], SENDER, true);
                 timestamps[seq_n] = duration_cast<milliseconds>(
                         system_clock::now().time_since_epoch());
                 SendPacket(packets[seq_n]);
@@ -177,11 +177,11 @@ void RDTConnection::Write() {
                 inFile.read(buf, data_size);
             }
             
-            Packet pkt = Packet(Packet::NONE, next_seq_num % constants::WINDOW_SIZE, buf, data_size);
+            Packet pkt = Packet(Packet::NONE, next_seq_num % constants::WINDOW_SIZE, constants::WINDOW_SIZE, buf, data_size);
             
             // TODO: update data structures
             
-            SendPacket();
+            SendPacket(pkt);
             next_seq_num += data_size;
         }
         

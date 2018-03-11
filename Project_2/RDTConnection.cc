@@ -1,5 +1,6 @@
 #include <chrono>
 #include <iostream>
+#include <list>
 #include <stdlib.h>
 #include <unordered_map>
 
@@ -11,6 +12,7 @@
 
 using namespace std;
 using namespace util;
+using namespace std::chrono;
 
 RDTConnection::RDTConnection(const int sock_fd)
     : front_packet(nullptr), cli_len(sizeof(cli_addr)), sock_fd(sock_fd),
@@ -140,10 +142,14 @@ void RDTConnection::Write() {
         return;
     }
     
-    // Data structures
-    unordered_map<uint64_t, bool> acks;
+    // Data structures:
+    unordered_map<uint64_t, Packet> packets; // Seq_num -> packet.
+    unordered_map<uint64_t, milliseconds> timestamps; // Seq_num -> timestamp.
+    unordered_map<uint64_t, bool> acks; // Seq_num -> acked.
+    list<uint64_t> packet_list; // List of packets' seq_nums.
     
     while (true) {
+
         // Step 2
         bool done_sending = false;
         while (next_seq_num < send_base + constants::WINDOW_SIZE) {

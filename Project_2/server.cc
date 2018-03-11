@@ -39,7 +39,7 @@ int main(int argc, char** argv) {
         ServerRDT serv_conn(sock_fd);
         if (!serv_conn.connected()) { continue; }
         string filename;
-        serv_conn.Read(filename, 256);
+        // serv_conn.Read(filename, 256);
 
         ifstream ifs(filename, ios::binary);
         noskipws(ifs);

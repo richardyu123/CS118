@@ -13,8 +13,9 @@ using namespace std;
 using namespace util;
 
 RDTConnection::RDTConnection(const int sock_fd)
-    : cli_len(sizeof(cli_addr)), sock_fd(sock_fd), is_connected(true),
-      offset(0), next_seq_num(0), send_base(0), receive_base(0) {}
+    : front_packet(nullptr), cli_len(sizeof(cli_addr)), sock_fd(sock_fd),
+      is_connected(true), offset(0), next_seq_num(0), send_base(0),
+      receive_base(0) {}
 
 RDTConnection::~RDTConnection() {
     if (front_packet != nullptr) {

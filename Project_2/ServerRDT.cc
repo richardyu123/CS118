@@ -27,32 +27,37 @@ ServerRDT::~ServerRDT() {
 void ServerRDT::Handshake() {
     ssize_t num_bytes;
     char buffer[constants::MAX_PACKET_LEN];
+    bool waiting = true;
 
     if(!ConfigureTimeout(0, 0)) { return; }
 
-    while (true) {
+    while (waiting) {
         // Read packet from socket.
         num_bytes = recvfrom(sock_fd, buffer, constants::MAX_PACKET_LEN, 0,
                        (struct sockaddr*)&cli_addr, &cli_len);
-        if (num_bytes > 0) {
-            Packet pkt(buffer, num_bytes);
-            PrintPacketInfo(pkt, RECEIVER, false);
-            if (pkt.GetPacketType() == Packet::SYN) {
-                receive_base = pkt.GetPacketNumber() + 1;
-                break;
-            } else if (pkt.GetPacketType() == Packet::FIN) {
-                // Unexpected FIN.
-                pkt = Packet(Packet::ACK, pkt.GetPacketNumber(),
-                            constants::WINDOW_SIZE, nullptr, 0);
-                PrintPacketInfo(pkt, SENDER, false);
-                sendto(sock_fd, pkt.GetPacketData().data(), pkt.GetPacketLength(), 0,
-                       (struct sockaddr*)&cli_addr, cli_len);
-                continue;
-            } else {
-                PrintErrorAndDC("Unexpected packet -- not SYN or FIN");
-            }
-        } else {
+        if (num_bytes <= 0) {
             PrintErrorAndDC("Recvfrom failure");
+            return;
+        }
+        // Expecting packet of type SYN.
+        Packet pkt(buffer, num_bytes);
+        PrintPacketInfo(pkt, RECEIVER, false);
+        switch (pkt.GetPacketType()) {
+        case Packet::SYN:
+            receive_base = pkt.GetPacketNumber() + 1;
+            waiting = false;
+            break;
+        case Packet::FIN:
+            // Unexpected FIN.
+            pkt = Packet(Packet::ACK, pkt.GetPacketNumber(),
+                         constants::WINDOW_SIZE, nullptr, 0);
+            PrintPacketInfo(pkt, SENDER, false);
+            sendto(sock_fd, pkt.GetPacketData().data(), pkt.GetPacketLength(),
+                   0, (struct sockaddr*)&cli_addr, cli_len);
+            break;
+        default:
+            PrintErrorAndDC("Unexpected packet -- not SYN or FIN");
+            return;
         }
     }
     if (!ConfigureTimeout(0, constants::RETRANS_TIMEOUT_us)) { return; }
@@ -60,31 +65,39 @@ void ServerRDT::Handshake() {
     // Generate and send SYNACK packet.
     Packet pkt(Packet::SYNACK, next_seq_num, constants::WINDOW_SIZE, nullptr,
                0);
+    waiting = true;
     bool retrans = false;
 
-    while (true) {
+    while (waiting) {
         PrintPacketInfo(pkt, SENDER, retrans);
         sendto(sock_fd, pkt.GetPacketData().data(), pkt.GetPacketLength(), 0,
                (struct sockaddr*)&cli_addr, cli_len);
-        // Expect ACK.
+        // Expecting packet of type ACK.
         num_bytes = recvfrom(sock_fd, buffer, constants::MAX_PACKET_LEN, 0,
                        (struct sockaddr*)&cli_addr, &cli_len);
-        if (num_bytes > 0) {
-            pkt = Packet(buffer, num_bytes);
-            PrintPacketInfo(pkt, RECEIVER, false);
-            if (pkt.GetPacketType() == Packet::SYN) {
-                retrans = true;
-                continue;
-            } else if (pkt.GetPacketType() != Packet::ACK) {
-                front_packet = new Packet(pkt);
-            }
-            break;
-        } else {
+        if (num_bytes <= 0) {
             retrans = true;
+            continue;
+        }
+        pkt = Packet(buffer, num_bytes);
+        PrintPacketInfo(pkt, RECEIVER, false);
+        switch (pkt.GetPacketType()) {
+        case Packet::SYN:
+            // We received a duplicate SYN.
+            retrans = true;
+            break;
+        case Packet::ACK:
+            waiting = false;
+            break;
+        default:
+            front_packet = new Packet(pkt);
+            waiting = false;
+            break;
         }
     }
 
     send_base++;
+    next_seq_num++;
 }
 
 // Sends FIN.

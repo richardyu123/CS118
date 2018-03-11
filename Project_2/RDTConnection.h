@@ -21,7 +21,7 @@ public:
 
     RDTConnection& SendMessage(const std::string& input);
     void Read(std::string& str, size_t num_bytes);
-    void Write();
+    void Write(string filename);
 
     bool connected() const;
 protected:    

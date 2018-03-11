@@ -24,7 +24,7 @@ ServerRDT::~ServerRDT() {
 }
 
 void ServerRDT::SendPacket(Packet packet) {
-    sendto(sock_fd, packet.GetPacketData().c_str(), packet.getPacketLength(), 0, (struct sockaddr*)&cli_addr, cli_len);
+    sendto(sock_fd, packet.GetPacketData().c_str(), packet.GetPacketLength(), 0, (struct sockaddr*)&cli_addr, cli_len);
 }
 
 // Receives the handshake.

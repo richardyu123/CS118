@@ -58,7 +58,8 @@ int main(int argc, char *argv[])
             filename.resize(256);
             filename[255] = '\0';
         }
-        client_conn.Write(filename);
+        cout << distance(filename.begin(), filename.end()) << endl;
+        client_conn.Write(filename, 256);
         ostringstream oss;
         client_conn.Read(oss, 1);
         ofstream ofs("./input_moose.data");
@@ -67,7 +68,7 @@ int main(int argc, char *argv[])
         size_t size;
         ss >> size;
         cout << "Size: " << size << endl;
-        client_conn.Read(ofs, 10);
+        client_conn.Read(ofs, size);
     }
 
     close(sockfd);  // close socket

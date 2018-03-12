@@ -21,7 +21,7 @@ public:
 
     RDTConnection& SendMessage(const std::string& input);
     void Read(std::basic_ostream<char>& os, size_t num_bytes);
-    void Write(string data);
+    void Write(const std::string& data, uint32_t max_size = 0);
 
     bool connected() const;
 protected:    

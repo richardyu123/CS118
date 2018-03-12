@@ -39,7 +39,10 @@ void RDTConnection::Read(std::basic_ostream<char>& os, size_t count) {
         auto data = received.front().pkt.GetData();
         size_t bytes = min(count - curr, static_cast<size_t>(distance(
                         data.begin() + offset, data.end())));
-        copy(data.begin() + offset, data.begin() + offset + bytes, str_iter);
+        for (auto iter = data.begin() + offset; iter != data.begin() +
+             offset + bytes; iter++) {
+            os << *iter;
+        }
         curr += bytes;
 
         if (bytes + offset == data.length()) {
@@ -135,9 +138,12 @@ void RDTConnection::Read(std::basic_ostream<char>& os, size_t count) {
     }
 }
 
-void RDTConnection::Write(string data) {
+void RDTConnection::Write(const std::string& data, uint32_t max_size) {
     auto begin = data.begin();
     auto end = data.end();
+    if (max_size != 0) {
+        end = begin + max_size;
+    }
     if (!ConfigureTimeout(0, constants::RETRANS_TIMEOUT_us)) {
         return;
     }
@@ -185,7 +191,7 @@ void RDTConnection::Write(string data) {
                 break;
             }
             Packet pkt = Packet(Packet::NONE, next_seq_num % constants::MAX_SEQ_NUM,
-                                constants::WINDOW_SIZE, buf, data_size);
+                                constants::WINDOW_SIZE, buf, count);
             
             packet_list.push_back(next_seq_num);
             packets[next_seq_num] = pkt;
@@ -200,9 +206,9 @@ void RDTConnection::Write(string data) {
                 test[i] = pkt.GetPacketData()[i];
             }
             Packet pkt_test(test, pkt.GetPacketLength());
-            cout << "Sending: " << pkt_test.GetData() << endl;
+            cout << "Sending: " << pkt.GetData() << endl;
             SendPacket(pkt);
-            next_seq_num += data_size;
+            next_seq_num += count;
         }
         
         if (done_sending && packets.empty()) {

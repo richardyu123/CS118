@@ -51,13 +51,19 @@ int main(int argc, char** argv) {
         if (inFile.fail()) {
             cout << "ifs failed." << endl;
         }
+        stringstream ss;
 
-        inFile.seekg(0, std::ios::end);
-        file_data.reserve(inFile.tellg());
-        inFile.seekg(0, std::ios::beg);
+        inFile.seekg(0, ios::end);
+        auto end = inFile.tellg();
+        file_data.reserve(end);
+        inFile.seekg(0, ios::beg);
+        auto begin = inFile.tellg();
 
         file_data.assign(istreambuf_iterator<char>(inFile),
                    istreambuf_iterator<char>());
+
+        ss << '1' << setfill('0') << setw(20) << (end - begin);
+        serv_conn.Write(ss.str());
 
         serv_conn.Write(file_data);
     }

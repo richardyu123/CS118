@@ -55,8 +55,8 @@ int main(int argc, char *argv[])
             util::exit_on_error("could not connect");
         }
         filename.resize(256);
-        filename.replace(filename.end(), filename.begin() + 255,
-                255 - filename.length(), '\0');
+        filename.replace(filename.end(), filename.begin() + 256,
+                256 - filename.length(), '\0');
         filename[255] = '\0';
         cout << distance(filename.begin(), filename.end()) << endl;
         client_conn.Write(filename, 256);

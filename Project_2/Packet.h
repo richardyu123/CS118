@@ -20,6 +20,7 @@ public:
     Packet(packet_t packet_type, uint16_t packet_num, uint16_t window_size,
            char* data, size_t data_length);
     Packet(char* full_data, size_t data_length);
+    Packet(const Packet& pkt);
     Packet();
 
     string TypeToString() const;

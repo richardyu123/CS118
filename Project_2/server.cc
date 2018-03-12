@@ -42,7 +42,7 @@ int main(int argc, char** argv) {
         if (!serv_conn.connected()) { continue; }
         string filename;
         ostringstream oss;
-        serv_conn.Read(cout, 256);
+        serv_conn.Read(oss, 256);
         cout << filename << endl;
         filename = oss.str();
         cout << "Filename: " << filename << endl;

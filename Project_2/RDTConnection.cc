@@ -113,6 +113,10 @@ void RDTConnection::Read(std::basic_ostream<char>& os, size_t count) {
                 size_t bytes = min(static_cast<size_t>(distance(
                                     data.begin(), data.end())), count -
                                     curr);
+                for (auto iter = data.begin(); iter != data.end(); iter++) {
+                    cout << *iter;
+                }
+                cout << distance(data.begin(), data.end()) << endl;
                 copy(data.begin(), data.end() + bytes, str_iter);
                 curr += bytes;
                 if (bytes == data.size()) {

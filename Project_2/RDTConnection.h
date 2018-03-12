@@ -45,7 +45,7 @@ protected:
     uint16_t next_seq_num;
     uint16_t send_base;
     uint16_t receive_base;
-    virtual void SendPacket(Packet packet) = 0;
+    virtual void SendPacket(const Packet& packet) = 0;
     virtual void Handshake() = 0;
     virtual void Finish() = 0;
 private:

@@ -9,7 +9,7 @@ public:
     ~ClientRDT();
     
 protected:
-    virtual void SendPacket(Packet packet);
+    virtual void SendPacket(const Packet& packet);
     virtual void Handshake();
     virtual void Finish();
 };

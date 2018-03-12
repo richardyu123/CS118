@@ -66,7 +66,8 @@ int main(int argc, char *argv[])
         client_conn.Read(ss, 20);
         size_t size;
         ss >> size;
-        client_conn.Read(cout, size);
+        cout << "Size: " << size << endl;
+        client_conn.Read(ofs, 10);
     }
 
     close(sockfd);  // close socket

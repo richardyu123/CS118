@@ -20,6 +20,12 @@ Packet::Packet(char* full_data, size_t data_length)
     FillWithFullData();
 }
 
+Packet::Packet(const Packet& pkt) 
+    : valid(true) {
+    packet_data = string(pkt.GetPacketData().data(), pkt.GetPacketLength());
+    FillWithFullData();
+}
+
 Packet::Packet() : valid(false) {}
 
 string Packet::TypeToString() const {

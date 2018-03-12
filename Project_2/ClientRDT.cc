@@ -13,7 +13,7 @@ ClientRDT::~ClientRDT() {
     if (is_connected) { Finish(); }
 }
 
-void ClientRDT::SendPacket(Packet packet) {
+void ClientRDT::SendPacket(const Packet& packet) {
     write(sock_fd, packet.GetPacketData().data(), packet.GetPacketLength());
 }
 

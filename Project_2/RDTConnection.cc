@@ -90,7 +90,6 @@ void RDTConnection::Read(std::basic_ostream<char>& os, size_t count) {
                 iter++;
             }
             if (iter == received.end()) {
-                cout << "test: " << pkt.GetData() << endl;
                 received.emplace(iter, packet_seq_t(pkt, seq_num));
             } else if (iter != received.end()) {
                 if (iter->num != seq_num) {
@@ -109,15 +108,12 @@ void RDTConnection::Read(std::basic_ostream<char>& os, size_t count) {
 
             while(receive_base == received.front().num) {
                 auto data = received.front().pkt.GetData();
-                cout << "Packet data: " << data << endl;
                 size_t bytes = min(static_cast<size_t>(distance(
                                     data.begin(), data.end())), count -
                                     curr);
-                for (auto iter = data.begin(); iter != data.end(); iter++) {
-                    cout << *iter;
+                for (auto iter = data.begin(); iter != data.begin() + bytes; iter++) {
+                    os << *iter;
                 }
-                cout << distance(data.begin(), data.end()) << endl;
-                copy(data.begin(), data.end() + bytes, str_iter);
                 curr += bytes;
                 if (bytes == data.size()) {
                     received.pop_front();

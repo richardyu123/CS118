@@ -1,3 +1,4 @@
+#include <fstream>
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -8,6 +9,8 @@
 #include <string.h>
 #include <errno.h>
 #include <cassert>
+#include <iostream>
+#include <sstream>
 
 #include "ClientRDT.h"
 #include "Constants.h"
@@ -17,6 +20,7 @@ int main(int argc, char *argv[])
 {
     int sockfd;  // socket descriptor
     int portno;
+    string filename;
     struct sockaddr_in serv_addr;
     // contains tons of information, including the server's IP address.
     struct hostent *server;
@@ -44,15 +48,25 @@ int main(int argc, char *argv[])
     if (connect(sockfd,(struct sockaddr *)&serv_addr,sizeof(serv_addr)) < 0) 
         fprintf(stderr, "ERROR connecting.\n");
     {
-        char moose[6] = "moose";
-        Packet p(Packet::SYN, 0, 5, moose, 6);
-        write(sockfd, p.GetPacketData().data(), p.GetPacketLength());
         ClientRDT client_conn(sockfd);
         if (client_conn.connected()) {
-            string filename(argv[3]);
+            filename = string(argv[3]);
         } else {
             util::exit_on_error("could not connect");
         }
+        if (filename.size() > 256) {
+            filename.resize(256);
+            filename[255] = '\0';
+        }
+        client_conn.Write(filename);
+        ostringstream oss;
+        client_conn.Read(oss, 1);
+        ofstream ofs("./input_moose.data");
+        stringstream ss;
+        client_conn.Read(ss, 20);
+        size_t size;
+        ss >> size;
+        client_conn.Read(cout, size);
     }
 
     close(sockfd);  // close socket

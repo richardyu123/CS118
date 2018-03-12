@@ -24,7 +24,7 @@ ServerRDT::~ServerRDT() {
 }
 
 void ServerRDT::SendPacket(Packet packet) {
-    sendto(sock_fd, packet.GetPacketData().c_str(), packet.GetPacketLength(), 0, (struct sockaddr*)&cli_addr, cli_len);
+    sendto(sock_fd, packet.GetPacketData().data(), packet.GetPacketLength(), 0, (struct sockaddr*)&cli_addr, cli_len);
 }
 
 // Receives the handshake.
@@ -187,7 +187,7 @@ void ServerRDT::Finish() {
         }
         Packet pkt2(Packet::ACK, receive_base, constants::WINDOW_SIZE,
                     nullptr, 0);
-        PrintPacketInfo(pkt2, SENDER, retrans);
+        PrintPacketInfo(pkt2, SENDER, false);
         sendto(sock_fd, pkt2.GetPacketData().data(), pkt2.GetPacketLength(),
                 0, (struct sockaddr*)&cli_addr, cli_len);
         waiting_for_fin = true;

@@ -20,8 +20,8 @@ public:
     } packet_seq_t;
 
     RDTConnection& SendMessage(const std::string& input);
-    void Read(std::string& str, size_t num_bytes);
-    void Write(string filename);
+    void Read(std::basic_ostream<char>& os, size_t num_bytes);
+    void Write(string data);
 
     bool connected() const;
 protected:    

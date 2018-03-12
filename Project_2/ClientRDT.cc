@@ -14,7 +14,7 @@ ClientRDT::~ClientRDT() {
 }
 
 void ClientRDT::SendPacket(Packet packet) {
-    write(sock_fd, packet.GetPacketData().c_str(), packet.GetPacketLength());
+    write(sock_fd, packet.GetPacketData().data(), packet.GetPacketLength());
 }
 
 void ClientRDT::Handshake() {
@@ -28,7 +28,7 @@ void ClientRDT::Handshake() {
     
     while (true) {
         PrintPacketInfo(packet, SENDER, false);
-        write(sock_fd, packet.GetPacketData().c_str(), packet.GetPacketLength());
+        write(sock_fd, packet.GetPacketData().data(), packet.GetPacketLength());
         
         ssize_t num_bytes = recv(sock_fd, buf, constants::MAX_PACKET_LEN, 0);
         if (num_bytes <= 0) {
@@ -50,7 +50,7 @@ void ClientRDT::Handshake() {
     next_seq_num += 1;
     Packet packet2 = Packet(Packet::ACK, next_seq_num, constants::WINDOW_SIZE, nullptr, 0);
     fprintf(stderr, "Sending ACK.\n");
-    write(sock_fd, packet2.GetPacketData().c_str(), packet2.GetPacketLength());
+    write(sock_fd, packet2.GetPacketData().data(), packet2.GetPacketLength());
 }
 
 void ClientRDT::Finish() {

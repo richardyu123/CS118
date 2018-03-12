@@ -54,15 +54,15 @@ int main(int argc, char *argv[])
         } else {
             util::exit_on_error("could not connect");
         }
-        if (filename.size() > 256) {
-            filename.resize(256);
-            filename[255] = '\0';
-        }
+        filename.resize(256);
+        filename.replace(filename.end(), filename.begin() + 256,
+                256 - filename.length(), '\0');
+        filename[255] = '\0';
         cout << distance(filename.begin(), filename.end()) << endl;
         client_conn.Write(filename, 256);
         ostringstream oss;
         client_conn.Read(oss, 1);
-        ofstream ofs("./input_moose.data");
+        ofstream ofs("./input_moose.txt");
         stringstream ss;
         client_conn.Read(ss, 20);
         size_t size;

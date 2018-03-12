@@ -70,7 +70,6 @@ void RDTConnection::Read(std::basic_ostream<char>& os, size_t count) {
             len = recvfrom(sock_fd, buffer, constants::MAX_PACKET_LEN,
                             0, (struct sockaddr*)&cli_addr, &cli_len);
             pkt = Packet(buffer, len);
-            cout << pkt.GetData() << endl;
             PrintPacketInfo(pkt, RECEIVER, false);
         }
         if (pkt.GetPacketType() != Packet::NONE) { continue; }
@@ -201,12 +200,6 @@ void RDTConnection::Write(const std::string& data, uint32_t max_size) {
             timestamps[next_seq_num] = timestamp;
             
             PrintPacketInfo(pkt, SENDER, false);
-            char test[pkt.GetPacketLength()];
-            for (int i = 0; i < pkt.GetPacketLength(); i++) {
-                test[i] = pkt.GetPacketData()[i];
-            }
-            Packet pkt_test(test, pkt.GetPacketLength());
-            cout << "Sending: " << pkt.GetData() << endl;
             SendPacket(pkt);
             next_seq_num += count;
         }

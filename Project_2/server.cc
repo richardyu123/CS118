@@ -1,6 +1,8 @@
+#include <algorithm>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <iterator>
 #include <netinet/in.h>
 #include <sstream>
 #include <stdio.h>
@@ -41,29 +43,39 @@ int main(int argc, char** argv) {
         ServerRDT serv_conn(sock_fd);
         if (!serv_conn.connected()) { continue; }
         string filename;
+
+        // Read socket for filename.
         serv_conn.Read(filename, 256);
-        cout << filename << endl;
         cout << "Filename: " << filename << endl;
-        ifstream inFile(filename);
+        ifstream inFile(filename, ios::binary|ios::in);
         string file_data;
         if (inFile.fail()) {
+            // Send that file wasn't found.
             cout << "ifs failed." << endl;
+            serv_conn.Write("0");
+        } else {
+            stringstream ss;
+
+            inFile >> noskipws;
+
+            inFile.seekg(0, ios::end);
+            auto end = inFile.tellg();
+            file_data.reserve(end);
+            inFile.seekg(0, ios::beg);
+            auto begin = inFile.tellg();
+
+            //file_data.assign(istreambuf_iterator<char>(inFile),
+            //                 istreambuf_iterator<char>());
+            copy_n(istream_iterator<char>(inFile), (end - begin),
+                   back_inserter(file_data));
+
+            // Confirm that file was found, send filesize.
+            ss << '1' << setfill('0') << setw(20) << (end - begin);
+            serv_conn.Write(ss.str());
+
+            // Send file data.
+            serv_conn.Write(file_data);
         }
-        stringstream ss;
-
-        inFile.seekg(0, ios::end);
-        auto end = inFile.tellg();
-        file_data.reserve(end);
-        inFile.seekg(0, ios::beg);
-        auto begin = inFile.tellg();
-
-        file_data.assign(istreambuf_iterator<char>(inFile),
-                   istreambuf_iterator<char>());
-
-        ss << '1' << setfill('0') << setw(20) << (end - begin);
-        serv_conn.Write(ss.str());
-
-        serv_conn.Write(file_data);
     }
 
     fprintf(stderr, "closing socket\n");

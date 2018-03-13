@@ -13,12 +13,7 @@ public:
     RDTConnection(const int sock_fd);
     ~RDTConnection();
 
-    typedef struct PacketAndSeq {
-        PacketAndSeq(Packet pkt, uint64_t num) : pkt(pkt), num(num) {}
-        Packet pkt;
-        uint64_t num;
-    } packet_seq_t;
-
+    // Send or receive data over the socket.
     void Read(std::string& str_buffer, size_t num_bytes);
     void Write(const std::string& data, uint32_t max_size = 0);
 
@@ -48,8 +43,14 @@ protected:
     virtual void Handshake() = 0;
     virtual void Finish() = 0;
 private:
+    typedef struct PacketAndSeq {
+        PacketAndSeq(Packet pkt, uint64_t num) : pkt(pkt), num(num) {}
+        Packet pkt;
+        uint64_t num;
+    } packet_seq_t;
+
     std::list<packet_seq_t> received;
-    uint64_t Floor(uint64_t num);
+    uint64_t CalculateOffset(uint64_t num);
 };
 
 #endif

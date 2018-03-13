@@ -56,18 +56,26 @@ int main(int argc, char *argv[])
         filename.replace(filename.end(), filename.begin() + 256,
                 256 - filename.length(), '\0');
         filename[255] = '\0';
-        cout << distance(filename.begin(), filename.end()) << endl;
+
+        // Send the requested filename.
         client_conn.Write(filename, 256);
         string s;
+
+        // Check if file was found.
         client_conn.Read(s, 1);
-        ofstream ofs("./received.data");
-        client_conn.Read(s, 20);
-        stringstream ss(s);
-        size_t size;
-        ss >> size;
-        cout << "Size: " << size << endl;
-        client_conn.Read(s, size);
-        ofs << s;
+
+        if (s[0] == '0') {
+            cout << "404 File not found." << endl;
+        } else {
+            ofstream ofs("./received.data");
+            client_conn.Read(s, 20);
+            stringstream ss(s);
+            size_t size;
+            ss >> size;
+            cout << "Size: " << size << endl;
+            client_conn.Read(s, size);
+            ofs << s;
+        }
     }
 
     close(sockfd);  // close socket

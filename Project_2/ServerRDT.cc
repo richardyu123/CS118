@@ -25,7 +25,8 @@ ServerRDT::~ServerRDT() {
 
 void ServerRDT::SendPacket(const Packet& packet, bool retrans) {
     PrintPacketInfo(packet, SENDER, retrans);
-    sendto(sock_fd, packet.GetPacketData().data(), packet.GetPacketLength(), 0, (struct sockaddr*)&cli_addr, cli_len);
+    sendto(sock_fd, packet.GetPacketData().data(), packet.GetPacketLength(),
+           0, (struct sockaddr*)&cli_addr, cli_len);
 }
 
 // Receives the handshake.
@@ -118,6 +119,7 @@ void ServerRDT::Finish() {
 
     if(!ConfigureTimeout(0, constants::RETRANS_TIMEOUT_us)) { return; }
 
+    // Send FIN, expect ACK.
     while (true) {
         PrintPacketInfo(pkt, SENDER, retrans);
         retrans = true;
@@ -150,6 +152,7 @@ void ServerRDT::Finish() {
     send_base++;
     chrono::seconds start = chrono::duration_cast<chrono::seconds>(
             chrono::system_clock::now().time_since_epoch());
+    // Expect FIN, send ACK.
     while (true) {
         if (waiting_for_fin) {
             chrono::seconds cur_time = chrono::duration_cast<chrono::seconds>(

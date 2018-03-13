@@ -1,3 +1,4 @@
+#include <fstream>
 #include <cassert>
 #include <iostream>
 #include <stdint.h>
@@ -65,6 +66,24 @@ int main() {
     assert(p.GetDataLength() == q.GetDataLength());
     assert(p.GetPacketNumber() == q.GetPacketNumber());
     assert(p.GetData().length() == q.GetData().length());
+
+    /*
+    // Test binary data.
+    string file_data;
+    ifstream ifs("plain.txt");
+    ifs.seekg(0, ios::end);
+    auto end = ifs.tellg();
+    file_data.reserve(end);
+    ifs.seekg(0, ios::beg);
+    auto begin = ifs.tellg();
+    file_data.assign(istreambuf_iterator<char>(ifs),
+                     istreambuf_iterator<char>());
+    auto str_iter = file_data.begin();
+    for (; begin != end; begin++) {
+        assert(*str_iter == *begin);
+        str_iter++;
+    }
+    */
 
     cout << "All tests passed!" << endl;
 }

@@ -18,6 +18,7 @@ void ClientRDT::SendPacket(const Packet& packet, bool retrans) {
     write(sock_fd, packet.GetPacketData().data(), packet.GetPacketLength());
 }
 
+// Send SYN, expect SYNACK, send ACK.
 void ClientRDT::Handshake() {
     char buf[constants::MAX_PACKET_LEN];
     next_seq_num = 0;

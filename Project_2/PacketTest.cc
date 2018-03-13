@@ -58,5 +58,13 @@ int main() {
     assert(p.GetData() == p2.GetData());
     assert(p.GetDataLength() == p2.GetDataLength());
 
+    // Test copy constructor.
+    Packet q = p;
+    assert(&p != &q);
+    assert(p.GetData() == q.GetData());
+    assert(p.GetDataLength() == q.GetDataLength());
+    assert(p.GetPacketNumber() == q.GetPacketNumber());
+    assert(p.GetData().length() == q.GetData().length());
+
     cout << "All tests passed!" << endl;
 }

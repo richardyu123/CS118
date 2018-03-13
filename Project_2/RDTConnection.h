@@ -19,7 +19,6 @@ public:
         uint64_t num;
     } packet_seq_t;
 
-    RDTConnection& SendMessage(const std::string& input);
     void Read(std::string& str_buffer, size_t num_bytes);
     void Write(const std::string& data, uint32_t max_size = 0);
 

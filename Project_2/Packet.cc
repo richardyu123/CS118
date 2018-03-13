@@ -8,7 +8,7 @@ Packet::Packet(packet_t packet_type, uint16_t packet_num, uint16_t window_size,
                char* data, size_t data_length)
     : packet_type(packet_type), packet_num(packet_num), window_size(window_size),
       data_length(data_length), valid(true) {
-    packet_data.reserve(constants::HEADER_SIZE + data_length);
+    packet_data.resize(constants::HEADER_SIZE + data_length);
     FillHeader();
     if (data_length != 0) {
         packet_data.replace(constants::HEADER_SIZE, data_length, data);
@@ -51,7 +51,7 @@ uint16_t Packet::GetWindowSize() const { return window_size; }
 
 bool Packet::isValid() const { return valid; }
 
-const std::vector<char>& Packet::GetData() const {
+string Packet::GetData() const {
     return packet_data.substr(constants::HEADER_SIZE, data_length);
 }
 

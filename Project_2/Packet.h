@@ -5,6 +5,8 @@
 #include <string>
 #include <unistd.h>
 
+using namespace std;
+
 class Packet {
 public:
     typedef enum PacketType {
@@ -21,15 +23,15 @@ public:
     Packet(const Packet& pkt);
     Packet();
 
-    std::string TypeToString() const;
+    string TypeToString() const;
 
     // Getters.
     packet_t GetPacketType() const;
     uint16_t GetPacketNumber() const;
     uint16_t GetWindowSize() const;
     bool isValid() const;
-    const std::vector<char>& GetData() const;
-    const std::vector<char>& GetPacketData() const;
+    string GetData() const;
+    const string& GetPacketData() const;
     size_t GetDataLength() const;
     size_t GetPacketLength() const;
 private:
@@ -39,7 +41,7 @@ private:
     packet_t packet_type;
     uint16_t packet_num;
     uint16_t window_size;
-    std::vector<char> packet_data;
+    string packet_data;
     size_t data_length;
     bool valid;
 };

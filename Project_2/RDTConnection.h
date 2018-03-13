@@ -42,9 +42,9 @@ protected:
     const int sock_fd;
     bool is_connected;
     size_t offset;
-    uint16_t next_seq_num;
-    uint16_t send_base;
-    uint16_t receive_base;
+    uint64_t next_seq_num;
+    uint64_t send_base;
+    uint64_t receive_base;
     virtual void SendPacket(const Packet& packet) = 0;
     virtual void Handshake() = 0;
     virtual void Finish() = 0;

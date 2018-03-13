@@ -172,7 +172,9 @@ void RDTConnection::Write(const std::string& data, uint32_t max_size) {
         // Step 2
         bool done_sending = false;
         while (next_seq_num < send_base + constants::WINDOW_SIZE) {
-            size_t data_size = min(constants::MAX_PACKET_LEN - constants::HEADER_SIZE, send_base + constants::WINDOW_SIZE - next_seq_num);
+            size_t data_size = min<size_t>(constants::MAX_PACKET_LEN - 
+                                   constants::HEADER_SIZE, send_base +
+                                   constants::WINDOW_SIZE - next_seq_num);
             if (data_size <= 0) {
                 done_sending = true;
                 break;
@@ -233,8 +235,13 @@ void RDTConnection::Write(const std::string& data, uint32_t max_size) {
                         constants::WINDOW_SIZE) {
                     PrintPacketInfo(pkt, RECEIVER, false);
                     acks[ack_num] = true;
-                    // NB: Might cause error if two of the same ack_nums are in the list.
-                    packet_list.remove(ack_num);
+                    for (auto iter = packet_list.begin(); iter !=
+                            packet_list.end(); iter++) {
+                        if (*iter == ack_num) {
+                            packet_list.erase(iter);
+                            break;
+                        } 
+                    }
                     timestamps.erase(ack_num);
                 }
             } else {
@@ -249,7 +256,7 @@ void RDTConnection::Write(const std::string& data, uint32_t max_size) {
 
         // Step 4
         while (acks.count(send_base) != 0 && acks[send_base]) {
-            uint16_t tmp = send_base;
+            uint64_t tmp = send_base;
             send_base += packets[send_base].GetDataLength();
             acks[tmp] = false;
             packets.erase(tmp);
@@ -295,7 +302,7 @@ void RDTConnection::PrintPacketInfo(const Packet& packet, rec_or_sender_t rs,
 }
 
 uint64_t RDTConnection::Floor(uint64_t num) {
-    auto rem = num % constants::MAX_SEQ_NUM;
-    if (rem) { return num - rem; }
+    int rem = num % constants::MAX_SEQ_NUM;
+    if (rem != 0) { return num - rem; }
     return num;
 }

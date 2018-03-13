@@ -23,7 +23,8 @@ ServerRDT::~ServerRDT() {
     }
 }
 
-void ServerRDT::SendPacket(const Packet& packet) {
+void ServerRDT::SendPacket(const Packet& packet, bool retrans) {
+    PrintPacketInfo(packet, SENDER, retrans);
     sendto(sock_fd, packet.GetPacketData().data(), packet.GetPacketLength(), 0, (struct sockaddr*)&cli_addr, cli_len);
 }
 

@@ -41,10 +41,8 @@ int main(int argc, char** argv) {
         ServerRDT serv_conn(sock_fd);
         if (!serv_conn.connected()) { continue; }
         string filename;
-        ostringstream oss;
-        serv_conn.Read(oss, 256);
+        serv_conn.Read(filename, 256);
         cout << filename << endl;
-        filename = oss.str();
         cout << "Filename: " << filename << endl;
         ifstream inFile(filename);
         string file_data;

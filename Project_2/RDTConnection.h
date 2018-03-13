@@ -20,7 +20,7 @@ public:
     } packet_seq_t;
 
     RDTConnection& SendMessage(const std::string& input);
-    void Read(std::basic_ostream<char>& os, size_t num_bytes);
+    void Read(std::string& str_buffer, size_t num_bytes);
     void Write(const std::string& data, uint32_t max_size = 0);
 
     bool connected() const;
@@ -45,7 +45,7 @@ protected:
     uint64_t next_seq_num;
     uint64_t send_base;
     uint64_t receive_base;
-    virtual void SendPacket(const Packet& packet) = 0;
+    virtual void SendPacket(const Packet& packet, bool retrans) = 0;
     virtual void Handshake() = 0;
     virtual void Finish() = 0;
 private:

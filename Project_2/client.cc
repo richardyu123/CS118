@@ -1,16 +1,14 @@
 #include <fstream>
-#include <stdio.h>
-#include <sys/types.h>
-#include <sys/socket.h>
+#include <iostream>
 #include <netinet/in.h>
-#include <netdb.h>      // define structures like hostent
+#include <netdb.h>
 #include <unistd.h>
+#include <sstream>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <errno.h>
-#include <cassert>
-#include <iostream>
-#include <sstream>
+#include <sys/types.h>
+#include <sys/socket.h>
 
 #include "ClientRDT.h"
 #include "Constants.h"
@@ -60,15 +58,16 @@ int main(int argc, char *argv[])
         filename[255] = '\0';
         cout << distance(filename.begin(), filename.end()) << endl;
         client_conn.Write(filename, 256);
-        ostringstream oss;
-        client_conn.Read(oss, 1);
-        ofstream ofs("./input_moose.txt");
-        stringstream ss;
-        client_conn.Read(ss, 20);
+        string s;
+        client_conn.Read(s, 1);
+        ofstream ofs("./received.data");
+        client_conn.Read(s, 20);
+        stringstream ss(s);
         size_t size;
         ss >> size;
         cout << "Size: " << size << endl;
-        client_conn.Read(ofs, size);
+        client_conn.Read(s, size);
+        ofs << s;
     }
 
     close(sockfd);  // close socket

@@ -1,4 +1,4 @@
-include <chrono>
+#include <chrono>
 #include <fstream>
 #include <iostream>
 #include <list>
@@ -177,23 +177,6 @@ void RDTConnection::Write(const std::string& data, uint32_t max_size) {
     
     while (true) {
         /*
-         * Resend timed out packets.
-         * Reset timestamps on resent packets.
-         */
-        milliseconds cur_time;
-        for (auto seq_n : packet_list) {
-            cur_time = duration_cast<milliseconds>(
-                    system_clock::now().time_since_epoch());
-            if (abs(duration_cast<milliseconds>(
-                            cur_time - timestamps[seq_n]).count()) >=
-                static_cast<int>(constants::RETRANS_TIMEOUT)) {
-                timestamps[seq_n] = duration_cast<milliseconds>(
-                        system_clock::now().time_since_epoch());
-                SendPacket(packets[seq_n], true);
-            }
-        }
-
-        /*
          * While there is still room in the window to send packets.
          * Generate a packet.
          * Send the packet.
@@ -301,6 +284,23 @@ void RDTConnection::Write(const std::string& data, uint32_t max_size) {
             send_base += packets[send_base].GetDataLength();
             acks[tmp] = false;
             packets.erase(tmp);
+        }
+
+        /*
+         * Resend timed out packets.
+         * Reset timestamps on resent packets.
+         */
+        milliseconds cur_time;
+        for (auto seq_n : packet_list) {
+            cur_time = duration_cast<milliseconds>(
+                    system_clock::now().time_since_epoch());
+            if (abs(duration_cast<milliseconds>(
+                            cur_time - timestamps[seq_n]).count()) >=
+                static_cast<int>(constants::RETRANS_TIMEOUT)) {
+                timestamps[seq_n] = duration_cast<milliseconds>(
+                        system_clock::now().time_since_epoch());
+                SendPacket(packets[seq_n], true);
+            }
         }
     }
 }

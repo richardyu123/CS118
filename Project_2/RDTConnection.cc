@@ -47,7 +47,7 @@ void RDTConnection::Read(std::string& str_buffer, size_t num_bytes) {
         }
         curr += bytes;
 
-        if (bytes + offset == data.length()) {
+        if (bytes + offset == data.size()) {
             received.pop_front();
             receive_base += data.size();
             offset = 0;

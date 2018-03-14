@@ -14,6 +14,8 @@
 #include "Constants.h"
 #include "Packet.h"
 
+using namespace std;
+
 int main(int argc, char *argv[])
 {
     int sockfd;  // socket descriptor

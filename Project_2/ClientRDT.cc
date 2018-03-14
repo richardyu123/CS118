@@ -5,6 +5,8 @@
 #include "Constants.h"
 #include "Packet.h"
 
+using namespace std;
+
 ClientRDT::ClientRDT(const int sock_fd) : RDTConnection(sock_fd) {
     Handshake();
 }

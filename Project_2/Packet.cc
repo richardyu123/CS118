@@ -2,8 +2,9 @@
 
 #include "Packet.h"
 
-#include <stdio.h>
+using namespace std;
 
+#include <iostream>
 Packet::Packet(packet_t packet_type, uint16_t packet_num, uint16_t window_size,
                char* data, size_t data_length)
     : packet_type(packet_type), packet_num(packet_num), window_size(window_size),
@@ -11,24 +12,20 @@ Packet::Packet(packet_t packet_type, uint16_t packet_num, uint16_t window_size,
     packet_data.resize(constants::HEADER_SIZE + data_length);
     FillHeader();
     if (data_length != 0) {
-        packet_data.replace(constants::HEADER_SIZE, data_length, data);
+        cout << packet_data.size() << endl;;
+        packet_data.insert(packet_data.begin() + constants::HEADER_SIZE, data,
+                           data + data_length);
     }
 }
 
 Packet::Packet(char* full_data, size_t data_length)
-    : packet_data(full_data, data_length), valid(true) {
-    FillWithFullData();
-}
-
-Packet::Packet(const Packet& pkt) 
-    : valid(true) {
-    packet_data = string(pkt.GetPacketData().data(), pkt.GetPacketLength());
+    : packet_data(full_data, full_data + data_length), valid(true) {
     FillWithFullData();
 }
 
 Packet::Packet() : valid(false) {}
 
-string Packet::TypeToString() const {
+std::string Packet::TypeToString() const {
     switch(packet_type) {
     case SYN:
         return "SYN";
@@ -51,19 +48,21 @@ uint16_t Packet::GetWindowSize() const { return window_size; }
 
 bool Packet::isValid() const { return valid; }
 
-string Packet::GetData() const {
-    return packet_data.substr(constants::HEADER_SIZE, data_length);
+std::vector<char> Packet::GetData() const {
+    return vector<char>(packet_data.begin() + constants::HEADER_SIZE,
+                        packet_data.end());
 }
 
-const string& Packet::GetPacketData() const {  return packet_data; }
+const std::vector<char>& Packet::GetPacketData() const {  return packet_data; }
 
 size_t Packet::GetDataLength() const { return data_length; }
+
 size_t Packet::GetPacketLength() const {
     return data_length + constants::HEADER_SIZE;
 }
 
 void Packet::FillWithFullData() {
-    data_length = packet_data.length() - constants::HEADER_SIZE;
+    data_length = packet_data.size() - constants::HEADER_SIZE;
     packet_num = static_cast<uint16_t>((unsigned char)packet_data[0] << 8);
     packet_num |= static_cast<uint16_t>((unsigned char)packet_data[1]);
     packet_type = static_cast<Packet::packet_t>((unsigned char)packet_data[2]);

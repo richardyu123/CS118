@@ -85,9 +85,9 @@ void ServerRDT::Handshake() {
             retrans = true;
             continue;
         }
-        pkt = Packet(buffer, num_bytes);
-        PrintPacketInfo(pkt, RECEIVER, false);
-        switch (pkt.GetPacketType()) {
+        Packet pkt2 = Packet(buffer, num_bytes);
+        PrintPacketInfo(pkt2, RECEIVER, false);
+        switch (pkt2.GetPacketType()) {
         case Packet::SYN:
             // We received a duplicate SYN.
             retrans = true;

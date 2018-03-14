@@ -26,6 +26,8 @@ void ClientRDT::Handshake() {
     next_seq_num = 0;
     Packet packet = Packet(Packet::SYN, next_seq_num, constants::WINDOW_SIZE, nullptr, 0);
     send_base = 0;
+    bool retrans = true;
+
     if(!ConfigureTimeout(0, constants::RETRANS_TIMEOUT_us)) {
         return;
     }
@@ -34,8 +36,9 @@ void ClientRDT::Handshake() {
         PrintPacketInfo(packet, SENDER, false);
         write(sock_fd, packet.GetPacketData().data(), packet.GetPacketLength());
         
-        ssize_t num_bytes = recv(sock_fd, buf, constants::MAX_PACKET_LEN, 0);
+        auto num_bytes = recv(sock_fd, buf, constants::MAX_PACKET_LEN, 0);
         if (num_bytes <= 0) {
+            retrans = true;
             continue;
         }
         

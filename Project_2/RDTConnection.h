@@ -39,6 +39,7 @@ protected:
     uint64_t next_seq_num;
     uint64_t send_base;
     uint64_t receive_base;
+    virtual ssize_t ReceivePacket(Packet& packet) = 0;
     virtual void SendPacket(const Packet& packet, bool retrans) = 0;
     virtual void Handshake() = 0;
     virtual void Finish() = 0;

@@ -9,6 +9,7 @@ public:
     ~ClientRDT();
     
 protected:
+    virtual ssize_t ReceivePacket(Packet& packet);
     virtual void SendPacket(const Packet& packet, bool retrans);
     virtual void Handshake();
     virtual void Finish();

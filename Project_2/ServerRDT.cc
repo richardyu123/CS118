@@ -23,6 +23,17 @@ ServerRDT::~ServerRDT() {
     }
 }
 
+ssize_t ServerRDT::ReceivePacket(Packet& packet) {
+    char buffer[constants::MAX_PACKET_LEN];
+    auto num_bytes = recvfrom(sock_fd, buffer, constants::MAX_PACKET_LEN, 0,
+                              (struct sockaddr*)&cli_addr, &cli_len);
+    if (num_bytes > 0) {
+        packet = Packet(buffer, num_bytes);
+        PrintPacketInfo(packet, RECEIVER, false);
+    }
+    return num_bytes;
+}
+
 void ServerRDT::SendPacket(const Packet& packet, bool retrans) {
     PrintPacketInfo(packet, SENDER, retrans);
     sendto(sock_fd, packet.GetPacketData().data(), packet.GetPacketLength(),
@@ -32,22 +43,19 @@ void ServerRDT::SendPacket(const Packet& packet, bool retrans) {
 // Receives the handshake.
 void ServerRDT::Handshake() {
     ssize_t num_bytes;
-    char buffer[constants::MAX_PACKET_LEN];
     bool waiting = true;
 
     if(!ConfigureTimeout(0, 0)) { return; }
 
     while (waiting) {
         // Read packet from socket.
-        num_bytes = recvfrom(sock_fd, buffer, constants::MAX_PACKET_LEN, 0,
-                       (struct sockaddr*)&cli_addr, &cli_len);
+        Packet pkt;
+        num_bytes = ReceivePacket(pkt);
         if (num_bytes <= 0) {
             PrintErrorAndDC("Recvfrom failure");
             return;
         }
         // Expecting packet of type SYN.
-        Packet pkt(buffer, num_bytes);
-        PrintPacketInfo(pkt, RECEIVER, false);
         switch (pkt.GetPacketType()) {
         case Packet::SYN:
             receive_base = pkt.GetPacketNumber() + 1;
@@ -79,14 +87,12 @@ void ServerRDT::Handshake() {
         sendto(sock_fd, pkt.GetPacketData().data(), pkt.GetPacketLength(), 0,
                (struct sockaddr*)&cli_addr, cli_len);
         // Expecting packet of type ACK.
-        num_bytes = recvfrom(sock_fd, buffer, constants::MAX_PACKET_LEN, 0,
-                       (struct sockaddr*)&cli_addr, &cli_len);
+        Packet pkt2;
+        num_bytes = ReceivePacket(pkt2);
         if (num_bytes <= 0) {
             retrans = true;
             continue;
         }
-        Packet pkt2 = Packet(buffer, num_bytes);
-        PrintPacketInfo(pkt2, RECEIVER, false);
         switch (pkt2.GetPacketType()) {
         case Packet::SYN:
             // We received a duplicate SYN.
@@ -109,7 +115,6 @@ void ServerRDT::Handshake() {
 // Sends FIN.
 void ServerRDT::Finish() {
     ssize_t num_bytes;
-    char buffer[constants::MAX_PACKET_LEN];
 
     bool retrans = false;
     Packet pkt(Packet::FIN, next_seq_num, constants::WINDOW_SIZE, nullptr, 0);
@@ -121,16 +126,13 @@ void ServerRDT::Finish() {
 
     // Send FIN, expect ACK.
     while (true) {
-        PrintPacketInfo(pkt, SENDER, retrans);
+        // TODO: This doesn't look right.
+        SendPacket(pkt, retrans);
         retrans = true;
-        sendto(sock_fd, pkt.GetPacketData().data(), pkt.GetPacketLength(), 0,
-               (struct sockaddr*)&cli_addr, cli_len);
 
-        num_bytes = recv(sock_fd, buffer, constants::MAX_PACKET_LEN, 0);
+        Packet pkt2;
+        num_bytes = ReceivePacket(pkt2);
         if (num_bytes <= 0) { continue; }
-
-        Packet pkt2(buffer, num_bytes);
-        PrintPacketInfo(pkt2, RECEIVER, false);
 
         if (pkt2.GetPacketType() == Packet::ACK) {
             if (pkt2.GetPacketNumber() == pkt.GetPacketNumber()) {
@@ -170,8 +172,8 @@ void ServerRDT::Finish() {
                              remaining).count(),
                              chrono::duration_cast<chrono::microseconds>(
                              remaining_us).count());
-            num_bytes = recvfrom(sock_fd, buffer, constants::MAX_PACKET_LEN,
-                                 0, (struct sockaddr*)&cli_addr, &cli_len);
+            Packet pkt;
+            num_bytes = ReceivePacket(pkt);
             if (num_bytes <= 0) {
                 if (!received_fin) {
                     cout << "Did not receive FIN during window." << endl;
@@ -179,8 +181,6 @@ void ServerRDT::Finish() {
                 break;
             }
 
-            Packet pkt(buffer, num_bytes);
-            PrintPacketInfo(pkt, RECEIVER, false);
             if (pkt.GetPacketType() == Packet::FIN) {
                 receive_base = pkt.GetPacketNumber();
                 received_fin = true;
@@ -191,9 +191,7 @@ void ServerRDT::Finish() {
         }
         Packet pkt2(Packet::ACK, receive_base, constants::WINDOW_SIZE,
                     nullptr, 0);
-        PrintPacketInfo(pkt2, SENDER, false);
-        sendto(sock_fd, pkt2.GetPacketData().data(), pkt2.GetPacketLength(),
-                0, (struct sockaddr*)&cli_addr, cli_len);
+        SendPacket(pkt2, false);
         waiting_for_fin = true;
     }
 

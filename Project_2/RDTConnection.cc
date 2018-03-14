@@ -172,7 +172,7 @@ void RDTConnection::Write(const std::string& data, uint32_t max_size) {
     // Data structures:
     unordered_map<uint64_t, Packet> packets; // Seq_num -> packet.
     unordered_map<uint64_t, milliseconds> timestamps; // Seq_num -> timestamp.
-    list<uint64_t> packet_list; // List of unacked packets' seq_nums.
+    list<uint64_t> unacked_seqs; // List of unacked packets' seq_nums.
     unordered_map<uint64_t, bool> acks; // Seq_num -> acked.
     
     while (true) {
@@ -183,6 +183,7 @@ void RDTConnection::Write(const std::string& data, uint32_t max_size) {
          * Update the sequence number.
          */
         bool done_sending = false;
+        char buf[constants::MAX_PACKET_LEN - constants::HEADER_SIZE];
         while (next_seq_num < send_base + constants::WINDOW_SIZE) {
             size_t data_size = min<size_t>(constants::MAX_PACKET_LEN - 
                                    constants::HEADER_SIZE, send_base +
@@ -193,7 +194,6 @@ void RDTConnection::Write(const std::string& data, uint32_t max_size) {
             }
 
             // Fill packet with input string.
-            char buf[data_size];
             memset((void*)buf, 0, data_size);
             size_t count = 0;
             while (begin != end && count < data_size) {
@@ -213,7 +213,7 @@ void RDTConnection::Write(const std::string& data, uint32_t max_size) {
                                 constants::WINDOW_SIZE, buf, count);
             
             // Sent packet needs to be acked.
-            packet_list.push_back(next_seq_num);
+            unacked_seqs.push_back(next_seq_num);
             packets[next_seq_num] = pkt;
             
             auto duration = system_clock::now().time_since_epoch();
@@ -243,7 +243,8 @@ void RDTConnection::Write(const std::string& data, uint32_t max_size) {
 
             if (pkt.GetPacketType() == Packet::ACK) {
                 // Get the ack number for the packet based on the send base.
-                auto ack_num = pkt.GetPacketNumber() + CalculateOffset(send_base);
+                auto ack_num = pkt.GetPacketNumber() +
+                    CalculateOffset(send_base);
                 auto curr_seq = send_base % constants::MAX_SEQ_NUM;
                 if (curr_seq + constants::WINDOW_SIZE >
                         constants::MAX_SEQ_NUM) {
@@ -259,10 +260,10 @@ void RDTConnection::Write(const std::string& data, uint32_t max_size) {
                         constants::WINDOW_SIZE) {
                     PrintPacketInfo(pkt, RECEIVER, false);
                     acks[ack_num] = true;
-                    for (auto iter = packet_list.begin(); iter !=
-                            packet_list.end(); iter++) {
+                    for (auto iter = unacked_seqs.begin(); iter !=
+                            unacked_seqs.end(); iter++) {
                         if (*iter == ack_num) {
-                            packet_list.erase(iter);
+                            unacked_seqs.erase(iter);
                             break;
                         } 
                     }
@@ -291,7 +292,7 @@ void RDTConnection::Write(const std::string& data, uint32_t max_size) {
          * Reset timestamps on resent packets.
          */
         milliseconds cur_time;
-        for (auto seq_n : packet_list) {
+        for (auto seq_n : unacked_seqs) {
             cur_time = duration_cast<milliseconds>(
                     system_clock::now().time_since_epoch());
             if (abs(duration_cast<milliseconds>(

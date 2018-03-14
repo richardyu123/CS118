@@ -12,7 +12,6 @@ Packet::Packet(packet_t packet_type, uint16_t packet_num, uint16_t window_size,
     packet_data.resize(constants::HEADER_SIZE + data_length);
     FillHeader();
     if (data_length != 0) {
-        cout << packet_data.size() << endl;;
         packet_data.insert(packet_data.begin() + constants::HEADER_SIZE, data,
                            data + data_length);
     }

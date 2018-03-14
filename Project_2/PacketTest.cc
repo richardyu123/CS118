@@ -19,7 +19,7 @@ int main() {
     // Tests raw data.
     auto raw_data = p.GetData();
     auto raw_data_size = p.GetDataLength();
-    assert(strcmp(raw_data.c_str(), test_str) == 0);
+    assert(strcmp(raw_data.data(), test_str) == 0);
     assert(raw_data_size == strlen(test_str));
 
     // Tests input data.
@@ -52,11 +52,12 @@ int main() {
     }
     Packet p2(fd2, full_data_size);
     delete fd2;
-    assert(full_data == p2.GetPacketData());
+    for (size_t i = 0; i < full_data.size(); i++) {
+        assert(full_data[i] == p2.GetPacketData()[i]);
+    }
     assert(p.GetPacketNumber() == p2.GetPacketNumber());
     assert(p.GetWindowSize() == p2.GetWindowSize());
     assert(p.GetPacketType() == p2.GetPacketType());
-    assert(p.GetData() == p2.GetData());
     assert(p.GetDataLength() == p2.GetDataLength());
 
     // Test copy constructor.
@@ -65,7 +66,7 @@ int main() {
     assert(p.GetData() == q.GetData());
     assert(p.GetDataLength() == q.GetDataLength());
     assert(p.GetPacketNumber() == q.GetPacketNumber());
-    assert(p.GetData().length() == q.GetData().length());
+    assert(p.GetData().size() == q.GetData().size());
 
     /*
     // Test binary data.

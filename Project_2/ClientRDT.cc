@@ -26,14 +26,14 @@ void ClientRDT::Handshake() {
     next_seq_num = 0;
     Packet packet = Packet(Packet::SYN, next_seq_num, constants::WINDOW_SIZE, nullptr, 0);
     send_base = 0;
-    bool retrans = true;
+    bool retrans = false;
 
     if(!ConfigureTimeout(0, constants::RETRANS_TIMEOUT_us)) {
         return;
     }
     
     while (true) {
-        PrintPacketInfo(packet, SENDER, false);
+        PrintPacketInfo(packet, SENDER, retrans);
         write(sock_fd, packet.GetPacketData().data(), packet.GetPacketLength());
         
         auto num_bytes = recv(sock_fd, buf, constants::MAX_PACKET_LEN, 0);

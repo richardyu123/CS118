@@ -33,7 +33,8 @@ void ClientRDT::SendPacket(const Packet& packet, bool retrans) {
 // Send SYN, expect SYNACK, send ACK.
 void ClientRDT::Handshake() {
     next_seq_num = 0;
-    Packet packet = Packet(Packet::SYN, next_seq_num, constants::WINDOW_SIZE, nullptr, 0);
+    Packet packet = Packet(Packet::SYN, next_seq_num, constants::WINDOW_SIZE,
+                           nullptr, 0);
     send_base = 0;
     bool retrans = false;
 
@@ -62,7 +63,8 @@ void ClientRDT::Handshake() {
     
     send_base += 1;
     next_seq_num += 1;
-    Packet packet2 = Packet(Packet::ACK, next_seq_num, constants::WINDOW_SIZE, nullptr, 0);
+    Packet packet2 = Packet(Packet::ACK, next_seq_num, constants::WINDOW_SIZE,
+                            nullptr, 0);
     SendPacket(packet2, false);
 }
 

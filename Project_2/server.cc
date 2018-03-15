@@ -52,7 +52,7 @@ int main(int argc, char** argv) {
         if (inFile.fail()) {
             // Send that file wasn't found.
             cout << "ifs failed." << endl;
-            serv_conn.Write("0");
+            serv_conn.Write(string("0"));
         } else {
             stringstream ss;
 

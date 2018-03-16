@@ -116,11 +116,11 @@ void ServerRDT::Handshake() {
 void ServerRDT::Finish() {
     ssize_t num_bytes;
 
+    Packet pkt_sent(Packet::FIN, next_seq_num, parameters::WINDOW_SIZE, nullptr, 0);
     bool retrans = false;
-    Packet pkt_sent(Packet::FIN, next_seq_num, constants::WINDOW_SIZE, nullptr, 0);
-    next_seq_num++;
     bool waiting_for_fin = true;
     bool received_fin = false;
+    next_seq_num++;
 
     if(!ConfigureTimeout(0, parameters::RETRANS_TIMEOUT_us)) { return; }
 
@@ -130,7 +130,7 @@ void ServerRDT::Finish() {
         retrans = true;
 
         Packet pkt_received;
-        num_bytes = ReceivePacket(pkt2);
+        num_bytes = ReceivePacket(pkt_received);
         if (num_bytes <= 0) { continue; }
 
         if (pkt_received.GetType() == Packet::ACK) {
@@ -180,15 +180,15 @@ void ServerRDT::Finish() {
                 break;
             }
 
-            if (pkt.GetType() == Packet::FIN) {
-                receive_base = pkt.GetPacketNumber();
+            if (pkt_received.GetType() == Packet::FIN) {
+                receive_base = pkt_received.GetPacketNumber();
                 received_fin = true;
             } else {
                 // Unexpected packet type.
                 continue;
             }
         }
-        Packet pkt_sent(Packet::ACK, receive_base, constants::WINDOW_SIZE,
+        Packet pkt_sent(Packet::ACK, receive_base, parameters::WINDOW_SIZE,
                     nullptr, 0);
         SendPacket(pkt_sent, false);
         waiting_for_fin = true;

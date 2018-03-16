@@ -2,9 +2,9 @@
 #define SERVER_RDT_H
 
 #include "Packet.h"
-#include "RDTConnection.h"
+#include "RDTController.h"
 
-class ServerRDT : public RDTConnection {
+class ServerRDT : public RDTController {
 public:
     ServerRDT(const int sock_fd);
     ~ServerRDT();

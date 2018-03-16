@@ -25,7 +25,7 @@ int main() {
     // Tests input data.
     auto p_num = p.GetPacketNumber();
     auto w_size = p.GetWindowSize();
-    auto p_type = p.GetPacketType();
+    auto p_type = p.GetType();
     assert(p_num == pkt_num);
     assert(w_size == win_size);
     assert(p_type == Packet::SYN);
@@ -57,7 +57,7 @@ int main() {
     }
     assert(p.GetPacketNumber() == p2.GetPacketNumber());
     assert(p.GetWindowSize() == p2.GetWindowSize());
-    assert(p.GetPacketType() == p2.GetPacketType());
+    assert(p.GetType() == p2.GetType());
     assert(p.GetDataLength() == p2.GetDataLength());
 
     // Test copy constructor.

@@ -5,15 +5,15 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "Constants.h"
 #include "Packet.h"
+#include "Parameters.h"
 
 #include "ServerRDT.h"
 
 using namespace std;
 
 ServerRDT::ServerRDT(const int sock_fd)
-    : RDTConnection(sock_fd) {
+    : RDTController(sock_fd) {
     Handshake();
 }
 
@@ -24,8 +24,8 @@ ServerRDT::~ServerRDT() {
 }
 
 ssize_t ServerRDT::ReceivePacket(Packet& packet) {
-    char buffer[constants::MAX_PACKET_LEN];
-    auto num_bytes = recvfrom(sock_fd, buffer, constants::MAX_PACKET_LEN, 0,
+    char buffer[parameters::MAX_PACKET_LEN];
+    auto num_bytes = recvfrom(sock_fd, buffer, parameters::MAX_PACKET_LEN, 0,
                               (struct sockaddr*)&cli_addr, &cli_len);
     if (num_bytes > 0) {
         packet = Packet(buffer, num_bytes);
@@ -56,7 +56,7 @@ void ServerRDT::Handshake() {
             return;
         }
         // Expecting packet of type SYN.
-        switch (pkt.GetPacketType()) {
+        switch (pkt.GetType()) {
         case Packet::SYN:
             receive_base = pkt.GetPacketNumber() + 1;
             waiting = false;
@@ -64,7 +64,7 @@ void ServerRDT::Handshake() {
         case Packet::FIN:
             // Unexpected FIN.
             pkt = Packet(Packet::ACK, pkt.GetPacketNumber(),
-                         constants::WINDOW_SIZE, nullptr, 0);
+                         parameters::WINDOW_SIZE, nullptr, 0);
             PrintPacketInfo(pkt, SENDER, false);
             sendto(sock_fd, pkt.GetPacketData().data(), pkt.GetPacketLength(),
                    0, (struct sockaddr*)&cli_addr, cli_len);
@@ -74,10 +74,10 @@ void ServerRDT::Handshake() {
             return;
         }
     }
-    if (!ConfigureTimeout(0, constants::RETRANS_TIMEOUT_us)) { return; }
+    if (!ConfigureTimeout(0, parameters::RETRANS_TIMEOUT_us)) { return; }
 
     // Generate and send SYNACK packet.
-    Packet pkt(Packet::SYNACK, next_seq_num, constants::WINDOW_SIZE, nullptr,
+    Packet pkt(Packet::SYNACK, next_seq_num, parameters::WINDOW_SIZE, nullptr,
                0);
     waiting = true;
     bool retrans = false;
@@ -93,7 +93,7 @@ void ServerRDT::Handshake() {
             retrans = true;
             continue;
         }
-        switch (pkt2.GetPacketType()) {
+        switch (pkt2.GetType()) {
         case Packet::SYN:
             // We received a duplicate SYN.
             retrans = true;
@@ -117,12 +117,12 @@ void ServerRDT::Finish() {
     ssize_t num_bytes;
 
     bool retrans = false;
-    Packet pkt(Packet::FIN, next_seq_num, constants::WINDOW_SIZE, nullptr, 0);
+    Packet pkt(Packet::FIN, next_seq_num, parameters::WINDOW_SIZE, nullptr, 0);
     next_seq_num++;
     bool waiting_for_fin = true;
     bool received_fin = false;
 
-    if(!ConfigureTimeout(0, constants::RETRANS_TIMEOUT_us)) { return; }
+    if(!ConfigureTimeout(0, parameters::RETRANS_TIMEOUT_us)) { return; }
 
     // Send FIN, expect ACK.
     while (true) {
@@ -134,13 +134,13 @@ void ServerRDT::Finish() {
         num_bytes = ReceivePacket(pkt2);
         if (num_bytes <= 0) { continue; }
 
-        if (pkt2.GetPacketType() == Packet::ACK) {
+        if (pkt2.GetType() == Packet::ACK) {
             if (pkt2.GetPacketNumber() == pkt.GetPacketNumber()) {
                 break;
             } else {
                 continue;
             }
-        } else if (pkt2.GetPacketType() == Packet::FIN) {
+        } else if (pkt2.GetType() == Packet::FIN) {
             receive_base = pkt2.GetPacketNumber();
             waiting_for_fin = false;
             received_fin = true;
@@ -181,7 +181,7 @@ void ServerRDT::Finish() {
                 break;
             }
 
-            if (pkt.GetPacketType() == Packet::FIN) {
+            if (pkt.GetType() == Packet::FIN) {
                 receive_base = pkt.GetPacketNumber();
                 received_fin = true;
             } else {
@@ -189,7 +189,7 @@ void ServerRDT::Finish() {
                 continue;
             }
         }
-        Packet pkt2(Packet::ACK, receive_base, constants::WINDOW_SIZE,
+        Packet pkt2(Packet::ACK, receive_base, parameters::WINDOW_SIZE,
                     nullptr, 0);
         SendPacket(pkt2, false);
         waiting_for_fin = true;

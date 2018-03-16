@@ -24,7 +24,7 @@ public:
     std::string TypeToString() const;
 
     // Getters.
-    packet_t GetPacketType() const;
+    packet_t GetType() const;
     uint16_t GetPacketNumber() const;
     uint16_t GetWindowSize() const;
     bool isValid() const;

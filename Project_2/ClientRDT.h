@@ -1,9 +1,9 @@
 #ifndef CLIENT_RDT_H
 #define CLIENT_RDT_H
 
-#include "RDTConnection.h"
+#include "RDTController.h"
 
-class ClientRDT : public RDTConnection {
+class ClientRDT : public RDTController {
 public:
     ClientRDT(const int sock_fd);
     ~ClientRDT();

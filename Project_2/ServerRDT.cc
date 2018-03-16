@@ -117,7 +117,7 @@ void ServerRDT::Finish() {
     ssize_t num_bytes;
 
     bool retrans = false;
-    Packet pkt(Packet::FIN, next_seq_num, parameters::WINDOW_SIZE, nullptr, 0);
+    Packet pkt_sent(Packet::FIN, next_seq_num, constants::WINDOW_SIZE, nullptr, 0);
     next_seq_num++;
     bool waiting_for_fin = true;
     bool received_fin = false;
@@ -126,22 +126,21 @@ void ServerRDT::Finish() {
 
     // Send FIN, expect ACK.
     while (true) {
-        // TODO: This doesn't look right.
-        SendPacket(pkt, retrans);
+        SendPacket(pkt_sent, retrans);
         retrans = true;
 
-        Packet pkt2;
+        Packet pkt_received;
         num_bytes = ReceivePacket(pkt2);
         if (num_bytes <= 0) { continue; }
 
-        if (pkt2.GetType() == Packet::ACK) {
-            if (pkt2.GetPacketNumber() == pkt.GetPacketNumber()) {
+        if (pkt_received.GetType() == Packet::ACK) {
+            if (pkt_received.GetPacketNumber() == pkt_sent.GetPacketNumber()) {
                 break;
             } else {
                 continue;
             }
-        } else if (pkt2.GetType() == Packet::FIN) {
-            receive_base = pkt2.GetPacketNumber();
+        } else if (pkt_received.GetType() == Packet::FIN) {
+            receive_base = pkt_received.GetPacketNumber();
             waiting_for_fin = false;
             received_fin = true;
             break;
@@ -172,8 +171,8 @@ void ServerRDT::Finish() {
                              remaining).count(),
                              chrono::duration_cast<chrono::microseconds>(
                              remaining_us).count());
-            Packet pkt;
-            num_bytes = ReceivePacket(pkt);
+            Packet pkt_received;
+            num_bytes = ReceivePacket(pkt_received);
             if (num_bytes <= 0) {
                 if (!received_fin) {
                     cout << "Did not receive FIN during window." << endl;
@@ -189,9 +188,9 @@ void ServerRDT::Finish() {
                 continue;
             }
         }
-        Packet pkt2(Packet::ACK, receive_base, parameters::WINDOW_SIZE,
+        Packet pkt_sent(Packet::ACK, receive_base, constants::WINDOW_SIZE,
                     nullptr, 0);
-        SendPacket(pkt2, false);
+        SendPacket(pkt_sent, false);
         waiting_for_fin = true;
     }
 

@@ -272,7 +272,7 @@ void RDTController::Write(const std::string& data, uint32_t max_size) {
             } else {
                 PrintPacketInfo(pkt, RECEIVER, false);
                 auto ack_num = pkt.GetPacketNumber();
-                if (ack_num == receive_base % parameters::MAX_SEQ_NUM) {
+                if (pkt.GetPacketNumber() == receive_base % constants::MAX_SEQ_NUM) {
                     front_packet = new Packet(pkt);
                     return;
                 }
@@ -324,13 +324,13 @@ void RDTController::PrintErrorAndDC(const string& msg) {
 
 void RDTController::PrintPacketInfo(const Packet& packet, rec_or_sender_t rs,
                                     bool retrans) {
-    if (rs == RECEIVER) {
+    if (rs == SENDER) {
+        cout << "Sending";
+    } else { // rs == RECEIVER
         retrans = false;
         cout << "Receiving";
-    } else { // rs == SENDER.
-        cout << "Sending";
     }
-    cout << " packet" << " " << packet.GetPacketNumber() <<
+    cout << " packet " << packet.GetPacketNumber() <<
         " " << packet.GetWindowSize();
     if (retrans) {
         cout << " Retransmission";

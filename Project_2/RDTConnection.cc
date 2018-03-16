@@ -224,7 +224,7 @@ void RDTConnection::Write(const std::string& data, uint32_t max_size) {
             next_seq_num += count;
         }
         
-        if (done_sending && packets.empty()) {
+        if (packets.empty() && done_sending) {
             break;
         }
         
@@ -235,22 +235,22 @@ void RDTConnection::Write(const std::string& data, uint32_t max_size) {
          */
         char buffer[parameters::MAX_PACKET_LEN];
         memset(buffer, 0, parameters::MAX_PACKET_LEN);
-        auto num_bytes = recvfrom(sock_fd, buffer, parameters::MAX_PACKET_LEN,
+        ssize_t num_bytes = recvfrom(sock_fd, buffer, parameters::MAX_PACKET_LEN,
                                   0, (struct sockaddr*)&cli_addr, &cli_len);
 
         if (num_bytes > 0) {
             Packet pkt(buffer, num_bytes);
-
+            
             if (pkt.GetPacketType() == Packet::ACK) {
+                auto pkt_num = pkt.GetPacketNumber();
                 // Get the ack number for the packet based on the send base.
-                auto ack_num = pkt.GetPacketNumber() +
-                    CalculateOffset(send_base);
+                auto ack_num = pkt_num + CalculateOffset(send_base);
                 auto curr_seq = send_base % parameters::MAX_SEQ_NUM;
                 if (curr_seq + parameters::WINDOW_SIZE >
                         parameters::MAX_SEQ_NUM) {
-                    if (pkt.GetPacketNumber() < curr_seq &&
-                            pkt.GetPacketNumber() <= parameters::WINDOW_SIZE) {
-                        ack_num = pkt.GetPacketNumber() + send_base +
+                    if (pkt_num <= parameters::WINDOW_SIZE &&
+                        pkt_num < curr_seq) {
+                        ack_num = pkt_num + send_base +
                             parameters::MAX_SEQ_NUM - curr_seq;
                     }
                 }
@@ -291,12 +291,10 @@ void RDTConnection::Write(const std::string& data, uint32_t max_size) {
          * Resend timed out packets.
          * Reset timestamps on resent packets.
          */
-        milliseconds cur_time;
         for (auto seq_n : unacked_seqs) {
-            cur_time = duration_cast<milliseconds>(
+            milliseconds now = duration_cast<milliseconds>(
                     system_clock::now().time_since_epoch());
-            if (abs(duration_cast<milliseconds>(
-                            cur_time - timestamps[seq_n]).count()) >=
+            if (abs((now - timestamps[seq_n]).count()) >=
                 static_cast<int>(parameters::RETRANS_TIMEOUT)) {
                 timestamps[seq_n] = duration_cast<milliseconds>(
                         system_clock::now().time_since_epoch());

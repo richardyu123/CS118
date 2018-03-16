@@ -14,8 +14,8 @@ public:
     ~RDTController();
 
     // Send or receive data over the socket.
-    void Read(std::string& str_buffer, size_t num_bytes);
-    void Write(const std::string& data, uint32_t max_size = 0);
+    void Receive(std::string& str_buffer, size_t num_bytes);
+    void Send(const std::string& data, uint32_t max_size = 0);
 
     bool connected() const;
 protected:    
@@ -42,7 +42,7 @@ protected:
     virtual ssize_t ReceivePacket(Packet& packet) = 0;
     virtual void SendPacket(const Packet& packet, bool retrans) = 0;
     virtual void Handshake() = 0;
-    virtual void Finish() = 0;
+    virtual void Close() = 0;
 private:
     typedef struct PacketAndSeq {
         PacketAndSeq(Packet pkt, uint64_t num) : pkt(pkt), num(num) {}

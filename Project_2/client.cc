@@ -60,22 +60,22 @@ int main(int argc, char *argv[])
         filename[255] = '\0';
 
         // Send the requested filename.
-        client_conn.Write(filename, 256);
+        client_conn.Send(filename, 256);
         string s;
 
         // Check if file was found.
-        client_conn.Read(s, 1);
+        client_conn.Receive(s, 1);
 
         if (s[0] == '0') {
             cout << "404 File not found." << endl;
         } else {
             ofstream ofs("./received.data");
-            client_conn.Read(s, 20);
+            client_conn.Receive(s, 20);
             stringstream ss(s);
             size_t size;
             ss >> size;
             cout << "Size: " << size << endl;
-            client_conn.Read(s, size);
+            client_conn.Receive(s, size);
             ofs << s;
         }
     }

@@ -27,15 +27,15 @@ RDTController::~RDTController() {
 }
 
 /*
- * Read num_bytes amount of bytes from the socket.
+ * Receive num_bytes amount of bytes from the socket.
  * Fill str_buffer with the read bytes.
  */
-void RDTController::Read(std::string& str_buffer, size_t num_bytes) {
+void RDTController::Receive(std::string& str_buffer, size_t num_bytes) {
     str_buffer.resize(num_bytes);
     auto str_iter = str_buffer.begin();
     size_t curr = 0;
 
-    // Read pre-buffered packets.
+    // Receive pre-buffered packets.
     while(!received.empty() && receive_base == received.front().num) {
         auto data = received.front().pkt.GetData();
         size_t bytes = min(num_bytes - curr, static_cast<size_t>(distance(
@@ -57,10 +57,10 @@ void RDTController::Read(std::string& str_buffer, size_t num_bytes) {
         }
 
     }
-    ssize_t len;
+    ssize_t n_bytes;
     char buffer[parameters::MAX_PACKET_LEN];
 
-    // Read until the output buffer is filled.
+    // Receive until the output buffer is filled.
     if (!ConfigureTimeout(0, 0)) { return; }
     while (curr < num_bytes) {
         memset((void*)buffer, 0, parameters::MAX_PACKET_LEN);
@@ -73,12 +73,12 @@ void RDTController::Read(std::string& str_buffer, size_t num_bytes) {
             delete front_packet;
             front_packet = nullptr;
         } else {
-            len = recvfrom(sock_fd, buffer, parameters::MAX_PACKET_LEN,
+            n_bytes = recvfrom(sock_fd, buffer, parameters::MAX_PACKET_LEN,
                             0, (struct sockaddr*)&cli_addr, &cli_len);
-            pkt = Packet(buffer, len);
+            pkt = Packet(buffer, n_bytes);
             PrintPacketInfo(pkt, RECEIVER, false);
         }
-        if (pkt.GetType() != Packet::NONE) { continue; }
+        if (pkt.GetType() != Packet::DATA) { continue; }
 
         uint64_t seq_num = pkt.GetPacketNumber() + CalculateOffset(receive_base);
         uint32_t seq = receive_base % parameters::MAX_SEQ_NUM;
@@ -159,7 +159,7 @@ void RDTController::Read(std::string& str_buffer, size_t num_bytes) {
  * Prepares and sends data through packets.
  * Waits for ACKs when the send window is full.
  */
-void RDTController::Write(const std::string& data, uint32_t max_size) {
+void RDTController::Send(const std::string& data, uint32_t max_size) {
     auto begin = data.begin();
     auto end = data.end();
     if (max_size != 0) {
@@ -208,7 +208,7 @@ void RDTController::Write(const std::string& data, uint32_t max_size) {
                 break;
             }
 
-            Packet pkt = Packet(Packet::NONE, next_seq_num %
+            Packet pkt = Packet(Packet::DATA, next_seq_num %
                                 parameters::MAX_SEQ_NUM,
                                 parameters::WINDOW_SIZE, buf, count);
             
@@ -335,7 +335,7 @@ void RDTController::PrintPacketInfo(const Packet& packet, rec_or_sender_t rs,
     if (retrans) {
         cout << " Retransmission";
     }
-    if (packet.GetType() != Packet::NONE) {
+    if (packet.GetType() != Packet::DATA) {
         cout << " " << packet.TypeToString();
     }
     cout << endl;

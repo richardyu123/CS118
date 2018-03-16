@@ -19,7 +19,7 @@ ServerRDT::ServerRDT(const int sock_fd)
 
 ServerRDT::~ServerRDT() {
     if (is_connected) {
-        Finish();
+        Close();
     }
 }
 
@@ -48,7 +48,7 @@ void ServerRDT::Handshake() {
     if(!ConfigureTimeout(0, 0)) { return; }
 
     while (waiting) {
-        // Read packet from socket.
+        // Receive packet from socket.
         Packet pkt;
         num_bytes = ReceivePacket(pkt);
         if (num_bytes <= 0) {
@@ -113,7 +113,7 @@ void ServerRDT::Handshake() {
 }
 
 // Sends FIN.
-void ServerRDT::Finish() {
+void ServerRDT::Close() {
     ssize_t num_bytes;
 
     bool retrans = false;
@@ -126,7 +126,6 @@ void ServerRDT::Finish() {
 
     // Send FIN, expect ACK.
     while (true) {
-        // TODO: This doesn't look right.
         SendPacket(pkt, retrans);
         retrans = true;
 

@@ -12,7 +12,7 @@ ClientRDT::ClientRDT(const int sock_fd) : RDTController(sock_fd) {
 }
 
 ClientRDT::~ClientRDT() {
-    if (is_connected) { Finish(); }
+    if (is_connected) { Close(); }
 }
 
 ssize_t ClientRDT::ReceivePacket(Packet& packet) {
@@ -61,14 +61,14 @@ void ClientRDT::Handshake() {
         }
     }
     
-    send_base += 1;
-    next_seq_num += 1;
+    send_base++;
+    next_seq_num++;
     Packet packet2 = Packet(Packet::ACK, next_seq_num, parameters::WINDOW_SIZE,
                             nullptr, 0);
     SendPacket(packet2, false);
 }
 
-void ClientRDT::Finish() {
+void ClientRDT::Close() {
     ssize_t num_bytes;
 
     if (!ConfigureTimeout(0, 0)) { return; }

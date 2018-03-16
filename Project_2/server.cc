@@ -44,15 +44,15 @@ int main(int argc, char** argv) {
         if (!serv_conn.connected()) { continue; }
         string filename;
 
-        // Read socket for filename.
-        serv_conn.Read(filename, 256);
+        // Receive socket for filename.
+        serv_conn.Receive(filename, 256);
         cout << "Filename: " << filename << endl;
         ifstream inFile(filename, ios::binary|ios::in);
         string file_data;
         if (inFile.fail()) {
             // Send that file wasn't found.
             cout << "ifs failed." << endl;
-            serv_conn.Write(string("0"));
+            serv_conn.Send(string("0"));
         } else {
             stringstream ss;
 
@@ -71,10 +71,10 @@ int main(int argc, char** argv) {
 
             // Confirm that file was found, send filesize.
             ss << '1' << setfill('0') << setw(20) << (end - begin);
-            serv_conn.Write(ss.str());
+            serv_conn.Send(ss.str());
 
             // Send file data.
-            serv_conn.Write(file_data);
+            serv_conn.Send(file_data);
         }
     }
 

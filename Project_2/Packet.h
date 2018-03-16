@@ -9,11 +9,11 @@
 class Packet {
 public:
     typedef enum PacketType {
-        SYN = 0b10000000,
-        ACK = 0b01000000,
-        FIN = 0b00100000,
-        NONE = 0b000000000,
-        SYNACK = 0b11000000
+        SYN = 0b00000001,
+        ACK = 0b00000010,
+        FIN = 0b00000100,
+        DATA = 0b000000000,
+        SYNACK = 0b00000011
     } packet_t;
 
     Packet(packet_t packet_type, uint16_t packet_num, uint16_t window_size,

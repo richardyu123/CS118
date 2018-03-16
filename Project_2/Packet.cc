@@ -38,7 +38,7 @@ std::string Packet::TypeToString() const {
     }
 }
 
-Packet::packet_t Packet::GetPacketType() const { return packet_type; }
+Packet::packet_t Packet::GetType() const { return packet_type; }
 
 uint16_t Packet::GetPacketNumber() const { return packet_num; }
 
@@ -61,17 +61,17 @@ size_t Packet::GetPacketLength() const {
 
 void Packet::FillWithFullData() {
     data_length = packet_data.size() - parameters::HEADER_SIZE;
-    packet_num = static_cast<uint16_t>((unsigned char)packet_data[0] << 8);
-    packet_num |= static_cast<uint16_t>((unsigned char)packet_data[1]);
-    packet_type = static_cast<Packet::packet_t>((unsigned char)packet_data[2]);
+    packet_type = static_cast<Packet::packet_t>((unsigned char)packet_data[0]);
+    packet_num = static_cast<uint16_t>((unsigned char)packet_data[1] << 8);
+    packet_num |= static_cast<uint16_t>((unsigned char)packet_data[2]);
     window_size = static_cast<uint16_t>((unsigned char)packet_data[3] << 8);
     window_size |= static_cast<uint16_t>((unsigned char)packet_data[4]);
 }
 
 void Packet::FillHeader() {
-    packet_data[0] = static_cast<char>(packet_num >> 8);
-    packet_data[1] = static_cast<char>(packet_num);
-    packet_data[2] = static_cast<char>(packet_type);
+    packet_data[0] = static_cast<char>(packet_type);
+    packet_data[1] = static_cast<char>(packet_num >> 8);
+    packet_data[2] = static_cast<char>(packet_num);
     packet_data[3] = static_cast<char>(window_size >> 8);
     packet_data[4] = static_cast<char>(window_size);
 }

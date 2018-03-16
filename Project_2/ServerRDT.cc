@@ -13,7 +13,7 @@
 using namespace std;
 
 ServerRDT::ServerRDT(const int sock_fd)
-    : RDTConnection(sock_fd) {
+    : RDTController(sock_fd) {
     Handshake();
 }
 
@@ -56,7 +56,7 @@ void ServerRDT::Handshake() {
             return;
         }
         // Expecting packet of type SYN.
-        switch (pkt.GetPacketType()) {
+        switch (pkt.GetType()) {
         case Packet::SYN:
             receive_base = pkt.GetPacketNumber() + 1;
             waiting = false;
@@ -93,7 +93,7 @@ void ServerRDT::Handshake() {
             retrans = true;
             continue;
         }
-        switch (pkt2.GetPacketType()) {
+        switch (pkt2.GetType()) {
         case Packet::SYN:
             // We received a duplicate SYN.
             retrans = true;
@@ -134,13 +134,13 @@ void ServerRDT::Finish() {
         num_bytes = ReceivePacket(pkt2);
         if (num_bytes <= 0) { continue; }
 
-        if (pkt2.GetPacketType() == Packet::ACK) {
+        if (pkt2.GetType() == Packet::ACK) {
             if (pkt2.GetPacketNumber() == pkt.GetPacketNumber()) {
                 break;
             } else {
                 continue;
             }
-        } else if (pkt2.GetPacketType() == Packet::FIN) {
+        } else if (pkt2.GetType() == Packet::FIN) {
             receive_base = pkt2.GetPacketNumber();
             waiting_for_fin = false;
             received_fin = true;
@@ -181,7 +181,7 @@ void ServerRDT::Finish() {
                 break;
             }
 
-            if (pkt.GetPacketType() == Packet::FIN) {
+            if (pkt.GetType() == Packet::FIN) {
                 receive_base = pkt.GetPacketNumber();
                 received_fin = true;
             } else {

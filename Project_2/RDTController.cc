@@ -9,18 +9,18 @@
 
 #include "Parameters.h"
 
-#include "RDTConnection.h"
+#include "RDTController.h"
 
 
 using namespace std;
 using namespace std::chrono;
 
-RDTConnection::RDTConnection(const int sock_fd)
+RDTController::RDTController(const int sock_fd)
     : front_packet(nullptr), cli_len(sizeof(cli_addr)), sock_fd(sock_fd),
       is_connected(true), offset(0), next_seq_num(0), send_base(0),
       receive_base(0) {}
 
-RDTConnection::~RDTConnection() {
+RDTController::~RDTController() {
     if (front_packet != nullptr) {
         delete front_packet;
     }
@@ -30,7 +30,7 @@ RDTConnection::~RDTConnection() {
  * Read num_bytes amount of bytes from the socket.
  * Fill str_buffer with the read bytes.
  */
-void RDTConnection::Read(std::string& str_buffer, size_t num_bytes) {
+void RDTController::Read(std::string& str_buffer, size_t num_bytes) {
     str_buffer.resize(num_bytes);
     auto str_iter = str_buffer.begin();
     size_t curr = 0;
@@ -49,7 +49,7 @@ void RDTConnection::Read(std::string& str_buffer, size_t num_bytes) {
 
         if (bytes + offset == data.size()) {
             received.pop_front();
-            receive_base += data.size();
+            receive_base += data.size() + parameters::HEADER_SIZE;
             offset = 0;
         } else {
             offset = bytes;
@@ -78,7 +78,7 @@ void RDTConnection::Read(std::string& str_buffer, size_t num_bytes) {
             pkt = Packet(buffer, len);
             PrintPacketInfo(pkt, RECEIVER, false);
         }
-        if (pkt.GetPacketType() != Packet::NONE) { continue; }
+        if (pkt.GetType() != Packet::NONE) { continue; }
 
         uint64_t seq_num = pkt.GetPacketNumber() + CalculateOffset(receive_base);
         uint32_t seq = receive_base % parameters::MAX_SEQ_NUM;
@@ -133,7 +133,7 @@ void RDTConnection::Read(std::string& str_buffer, size_t num_bytes) {
                 curr += bytes;
                 if (bytes == data.size()) {
                     received.pop_front();
-                    receive_base += data.size();
+                    receive_base += data.size() + parameters::HEADER_SIZE;
                     offset = 0;
                 } else {
                     offset = bytes;
@@ -159,7 +159,7 @@ void RDTConnection::Read(std::string& str_buffer, size_t num_bytes) {
  * Prepares and sends data through packets.
  * Waits for ACKs when the send window is full.
  */
-void RDTConnection::Write(const std::string& data, uint32_t max_size) {
+void RDTController::Write(const std::string& data, uint32_t max_size) {
     auto begin = data.begin();
     auto end = data.end();
     if (max_size != 0) {
@@ -221,7 +221,7 @@ void RDTConnection::Write(const std::string& data, uint32_t max_size) {
             timestamps[next_seq_num] = timestamp;
             
             SendPacket(pkt, false);
-            next_seq_num += count;
+            next_seq_num += count + parameters::HEADER_SIZE;
         }
         
         if (packets.empty() && done_sending) {
@@ -241,7 +241,7 @@ void RDTConnection::Write(const std::string& data, uint32_t max_size) {
         if (num_bytes > 0) {
             Packet pkt(buffer, num_bytes);
             
-            if (pkt.GetPacketType() == Packet::ACK) {
+            if (pkt.GetType() == Packet::ACK) {
                 auto pkt_num = pkt.GetPacketNumber();
                 // Get the ack number for the packet based on the send base.
                 auto ack_num = pkt_num + CalculateOffset(send_base);
@@ -282,7 +282,7 @@ void RDTConnection::Write(const std::string& data, uint32_t max_size) {
         // Increase the send base if the packet at the base has been acked.
         while (acks.count(send_base) != 0 && acks[send_base]) {
             uint64_t tmp = send_base;
-            send_base += packets[send_base].GetDataLength();
+            send_base += packets[send_base].GetPacketLength();
             acks[tmp] = false;
             packets.erase(tmp);
         }
@@ -304,9 +304,9 @@ void RDTConnection::Write(const std::string& data, uint32_t max_size) {
     }
 }
 
-bool RDTConnection::connected() const { return is_connected; }
+bool RDTController::connected() const { return is_connected; }
 
-bool RDTConnection::ConfigureTimeout(int sec, int usec) {
+bool RDTController::ConfigureTimeout(int sec, int usec) {
     struct timeval t_val;
     t_val.tv_sec = sec;
     t_val.tv_usec = usec;
@@ -317,12 +317,12 @@ bool RDTConnection::ConfigureTimeout(int sec, int usec) {
     return (rc == 0);
 }
 
-void RDTConnection::PrintErrorAndDC(const string& msg) {
+void RDTController::PrintErrorAndDC(const string& msg) {
     fprintf(stderr, "ERROR: %s.\n", msg.c_str());
     is_connected = false;
 }
 
-void RDTConnection::PrintPacketInfo(const Packet& packet, rec_or_sender_t rs,
+void RDTController::PrintPacketInfo(const Packet& packet, rec_or_sender_t rs,
                                     bool retrans) {
     if (rs == RECEIVER) {
         retrans = false;
@@ -335,13 +335,13 @@ void RDTConnection::PrintPacketInfo(const Packet& packet, rec_or_sender_t rs,
     if (retrans) {
         cout << " Retransmission";
     }
-    if (packet.GetPacketType() != Packet::NONE) {
+    if (packet.GetType() != Packet::NONE) {
         cout << " " << packet.TypeToString();
     }
     cout << endl;
 }
 
-uint64_t RDTConnection::CalculateOffset(uint64_t num) {
+uint64_t RDTController::CalculateOffset(uint64_t num) {
     int rem = num % parameters::MAX_SEQ_NUM;
     if (rem != 0) { return num - rem; }
     return num;

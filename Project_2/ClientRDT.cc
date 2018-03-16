@@ -7,7 +7,7 @@
 
 using namespace std;
 
-ClientRDT::ClientRDT(const int sock_fd) : RDTConnection(sock_fd) {
+ClientRDT::ClientRDT(const int sock_fd) : RDTController(sock_fd) {
     Handshake();
 }
 
@@ -52,7 +52,7 @@ void ClientRDT::Handshake() {
             continue;
         }
         
-        if (packet.GetPacketType() == Packet::SYNACK) {
+        if (packet.GetType() == Packet::SYNACK) {
             receive_base = packet.GetPacketNumber() + 1;
             break;
         }
@@ -80,7 +80,7 @@ void ClientRDT::Finish() {
             cerr << "Error on receiving." << endl;
             return;
         } else {
-            if (pkt.GetPacketType() == Packet::FIN) { break; }
+            if (pkt.GetType() == Packet::FIN) { break; }
             // Unexpected packet type.
             Packet pkt2(Packet::ACK, pkt.GetPacketNumber(),
                         parameters::WINDOW_SIZE, nullptr, 0);
@@ -110,10 +110,10 @@ void ClientRDT::Finish() {
         } else if (num_bytes == 0) {
             break;
         } else {
-            if (pkt2.GetPacketType() == Packet::FIN) {
+            if (pkt2.GetType() == Packet::FIN) {
                 retrans = true;
                 continue;
-            } else if (pkt2.GetPacketType() == Packet::ACK) {
+            } else if (pkt2.GetType() == Packet::ACK) {
                 break;
             } else {
                 // Unexpected packet type.

@@ -1,5 +1,5 @@
-#ifndef RDT_CONNECTION_H
-#define RDT_CONNECTION_H
+#ifndef RDT_CONTROLLER_H
+#define RDT_CONTROLLER_H
 
 #include <list>
 #include <netinet/in.h>
@@ -8,10 +8,10 @@
 
 #include "Packet.h"
 
-class RDTConnection {
+class RDTController {
 public:
-    RDTConnection(const int sock_fd);
-    ~RDTConnection();
+    RDTController(const int sock_fd);
+    ~RDTController();
 
     // Send or receive data over the socket.
     void Read(std::string& str_buffer, size_t num_bytes);

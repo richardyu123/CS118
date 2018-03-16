@@ -7,7 +7,7 @@
 #include <string.h>
 #include <unordered_map>
 
-#include "Constants.h"
+#include "Parameters.h"
 
 #include "RDTConnection.h"
 
@@ -58,12 +58,12 @@ void RDTConnection::Read(std::string& str_buffer, size_t num_bytes) {
 
     }
     ssize_t len;
-    char buffer[constants::MAX_PACKET_LEN];
+    char buffer[parameters::MAX_PACKET_LEN];
 
     // Read until the output buffer is filled.
     if (!ConfigureTimeout(0, 0)) { return; }
     while (curr < num_bytes) {
-        memset((void*)buffer, 0, constants::MAX_PACKET_LEN);
+        memset((void*)buffer, 0, parameters::MAX_PACKET_LEN);
         Packet pkt;
 
         // If there is some packet read from before -- read that, else
@@ -73,7 +73,7 @@ void RDTConnection::Read(std::string& str_buffer, size_t num_bytes) {
             delete front_packet;
             front_packet = nullptr;
         } else {
-            len = recvfrom(sock_fd, buffer, constants::MAX_PACKET_LEN,
+            len = recvfrom(sock_fd, buffer, parameters::MAX_PACKET_LEN,
                             0, (struct sockaddr*)&cli_addr, &cli_len);
             pkt = Packet(buffer, len);
             PrintPacketInfo(pkt, RECEIVER, false);
@@ -81,18 +81,18 @@ void RDTConnection::Read(std::string& str_buffer, size_t num_bytes) {
         if (pkt.GetPacketType() != Packet::NONE) { continue; }
 
         uint64_t seq_num = pkt.GetPacketNumber() + CalculateOffset(receive_base);
-        uint32_t seq = receive_base % constants::MAX_SEQ_NUM;
-        if (seq + constants::WINDOW_SIZE > constants::MAX_SEQ_NUM) {
+        uint32_t seq = receive_base % parameters::MAX_SEQ_NUM;
+        if (seq + parameters::WINDOW_SIZE > parameters::MAX_SEQ_NUM) {
             if (pkt.GetPacketNumber() < seq && pkt.GetPacketNumber() <= 
-                    constants::WINDOW_SIZE) {
+                    parameters::WINDOW_SIZE) {
                 seq_num = pkt.GetPacketNumber() + receive_base +
-                    constants::MAX_SEQ_NUM - seq;
+                    parameters::MAX_SEQ_NUM - seq;
             }
         }
 
         // If the received packet falls within the window range.
         if (seq_num >= receive_base && seq_num <= receive_base +
-                constants::WINDOW_SIZE - 1) {
+                parameters::WINDOW_SIZE - 1) {
             bool retrans = false;
             auto iter = received.begin();
 
@@ -113,7 +113,7 @@ void RDTConnection::Read(std::string& str_buffer, size_t num_bytes) {
 
             // Prepare and send ACK for the packet.
             Packet acket(Packet::ACK, pkt.GetPacketNumber(),
-                            constants::WINDOW_SIZE, nullptr, 0);
+                            parameters::WINDOW_SIZE, nullptr, 0);
             PrintPacketInfo(acket, SENDER, retrans);
             sendto(sock_fd, acket.GetPacketData().data(),
                     acket.GetPacketLength(), 0, (struct sockaddr*)&cli_addr,
@@ -146,7 +146,7 @@ void RDTConnection::Read(std::string& str_buffer, size_t num_bytes) {
              * packet does not fall within the receive window.
              */
             Packet acket(Packet::ACK, pkt.GetPacketNumber(),
-                            constants::WINDOW_SIZE, nullptr, 0);
+                            parameters::WINDOW_SIZE, nullptr, 0);
             PrintPacketInfo(acket, SENDER, (seq_num < receive_base));
             sendto(sock_fd, acket.GetPacketData().data(),
                     acket.GetPacketLength(), 0, (struct sockaddr*)&cli_addr,
@@ -165,7 +165,7 @@ void RDTConnection::Write(const std::string& data, uint32_t max_size) {
     if (max_size != 0) {
         end = begin + max_size;
     }
-    if (!ConfigureTimeout(0, constants::RETRANS_TIMEOUT_us)) {
+    if (!ConfigureTimeout(0, parameters::RETRANS_TIMEOUT_us)) {
         return;
     }
     
@@ -183,11 +183,11 @@ void RDTConnection::Write(const std::string& data, uint32_t max_size) {
          * Update the sequence number.
          */
         bool done_sending = false;
-        char buf[constants::MAX_PACKET_LEN - constants::HEADER_SIZE];
-        while (next_seq_num < send_base + constants::WINDOW_SIZE) {
-            size_t data_size = min<size_t>(constants::MAX_PACKET_LEN - 
-                                   constants::HEADER_SIZE, send_base +
-                                   constants::WINDOW_SIZE - next_seq_num);
+        char buf[parameters::MAX_PACKET_LEN - parameters::HEADER_SIZE];
+        while (next_seq_num < send_base + parameters::WINDOW_SIZE) {
+            size_t data_size = min<size_t>(parameters::MAX_PACKET_LEN - 
+                                   parameters::HEADER_SIZE, send_base +
+                                   parameters::WINDOW_SIZE - next_seq_num);
             if (data_size == 0) {
                 done_sending = true;
                 break;
@@ -209,8 +209,8 @@ void RDTConnection::Write(const std::string& data, uint32_t max_size) {
             }
 
             Packet pkt = Packet(Packet::NONE, next_seq_num %
-                                constants::MAX_SEQ_NUM,
-                                constants::WINDOW_SIZE, buf, count);
+                                parameters::MAX_SEQ_NUM,
+                                parameters::WINDOW_SIZE, buf, count);
             
             // Sent packet needs to be acked.
             unacked_seqs.push_back(next_seq_num);
@@ -233,9 +233,9 @@ void RDTConnection::Write(const std::string& data, uint32_t max_size) {
          * from list of unacked packets. If packet is not an ACK, save for a 
          * possible read later.
          */
-        char buffer[constants::MAX_PACKET_LEN];
-        memset(buffer, 0, constants::MAX_PACKET_LEN);
-        auto num_bytes = recvfrom(sock_fd, buffer, constants::MAX_PACKET_LEN,
+        char buffer[parameters::MAX_PACKET_LEN];
+        memset(buffer, 0, parameters::MAX_PACKET_LEN);
+        auto num_bytes = recvfrom(sock_fd, buffer, parameters::MAX_PACKET_LEN,
                                   0, (struct sockaddr*)&cli_addr, &cli_len);
 
         if (num_bytes > 0) {
@@ -245,19 +245,19 @@ void RDTConnection::Write(const std::string& data, uint32_t max_size) {
                 // Get the ack number for the packet based on the send base.
                 auto ack_num = pkt.GetPacketNumber() +
                     CalculateOffset(send_base);
-                auto curr_seq = send_base % constants::MAX_SEQ_NUM;
-                if (curr_seq + constants::WINDOW_SIZE >
-                        constants::MAX_SEQ_NUM) {
+                auto curr_seq = send_base % parameters::MAX_SEQ_NUM;
+                if (curr_seq + parameters::WINDOW_SIZE >
+                        parameters::MAX_SEQ_NUM) {
                     if (pkt.GetPacketNumber() < curr_seq &&
-                            pkt.GetPacketNumber() <= constants::WINDOW_SIZE) {
+                            pkt.GetPacketNumber() <= parameters::WINDOW_SIZE) {
                         ack_num = pkt.GetPacketNumber() + send_base +
-                            constants::MAX_SEQ_NUM - curr_seq;
+                            parameters::MAX_SEQ_NUM - curr_seq;
                     }
                 }
 
                 // Remove packet from unacked list if the ack number matches.
                 if (send_base <= ack_num && ack_num <= send_base +
-                        constants::WINDOW_SIZE) {
+                        parameters::WINDOW_SIZE) {
                     PrintPacketInfo(pkt, RECEIVER, false);
                     acks[ack_num] = true;
                     for (auto iter = unacked_seqs.begin(); iter !=
@@ -272,7 +272,7 @@ void RDTConnection::Write(const std::string& data, uint32_t max_size) {
             } else {
                 PrintPacketInfo(pkt, RECEIVER, false);
                 auto ack_num = pkt.GetPacketNumber();
-                if (ack_num == receive_base % constants::MAX_SEQ_NUM) {
+                if (ack_num == receive_base % parameters::MAX_SEQ_NUM) {
                     front_packet = new Packet(pkt);
                     return;
                 }
@@ -297,7 +297,7 @@ void RDTConnection::Write(const std::string& data, uint32_t max_size) {
                     system_clock::now().time_since_epoch());
             if (abs(duration_cast<milliseconds>(
                             cur_time - timestamps[seq_n]).count()) >=
-                static_cast<int>(constants::RETRANS_TIMEOUT)) {
+                static_cast<int>(parameters::RETRANS_TIMEOUT)) {
                 timestamps[seq_n] = duration_cast<milliseconds>(
                         system_clock::now().time_since_epoch());
                 SendPacket(packets[seq_n], true);
@@ -344,7 +344,7 @@ void RDTConnection::PrintPacketInfo(const Packet& packet, rec_or_sender_t rs,
 }
 
 uint64_t RDTConnection::CalculateOffset(uint64_t num) {
-    int rem = num % constants::MAX_SEQ_NUM;
+    int rem = num % parameters::MAX_SEQ_NUM;
     if (rem != 0) { return num - rem; }
     return num;
 }

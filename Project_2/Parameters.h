@@ -1,5 +1,5 @@
-#ifndef CONSTANTS_H
-#define CONSTANTS_H
+#ifndef PARAMETERS_H
+#define PARAMETERS_H
 
 #include <stdio.h>
 #include <string>
@@ -11,7 +11,7 @@ void exit_on_error(const std::string& msg);
 
 }
 
-namespace constants {
+namespace parameters {
 // Size in bytes.
 const static uint32_t MAX_PACKET_LEN = 1024;
 const static uint32_t MAX_SEQ_NUM = 30720;

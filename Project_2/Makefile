@@ -1,7 +1,7 @@
 CXX = g++
 FLAGS = -Wall -Wextra -std=c++11
 DIR = ./project_2
-BASE_CC = Packet.cc RDTConnection.cc Constants.cc
+BASE_CC = Packet.cc RDTConnection.cc Parameters.cc
 TEST_CC = PacketTest.cc
 CLIENT_CC = client.cc ClientRDT.cc
 SERVER_CC = server.cc ServerRDT.cc
@@ -22,13 +22,13 @@ $(DIR):
 	mkdir -p $(DIR)
 
 client: $(CLIENT_O) $(BASE_O)
-		$(CXX) $(FLAGS) $^ -o $@
+	$(CXX) $(FLAGS) $^ -o $@
 	
 server: $(SERVER_O) $(BASE_O)
-		$(CXX) $(FLAGS) $^ -o $@
+	$(CXX) $(FLAGS) $^ -o $@
 		
 test: $(TEST_O) $(BASE_O)
-		$(CXX) $(FLAGS) $^ -o $@
+	$(CXX) $(FLAGS) $^ -o $@
 
 -include $(BASE_DEP) $(TEST_DEP) $(CLIENT_DEP) $(SERVER_DEP)
 

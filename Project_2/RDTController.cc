@@ -17,8 +17,8 @@ using namespace std::chrono;
 
 RDTController::RDTController(const int sock_fd)
     : front_packet(nullptr), cli_len(sizeof(cli_addr)), sock_fd(sock_fd),
-      is_connected(true), offset(0), next_seq_num(0), send_base(0),
-      receive_base(0) {}
+      is_connected(true), offset(0), send_base(0), receive_base(0),
+      next_seq_num(0) {}
 
 RDTController::~RDTController() {
     if (front_packet != nullptr) {
@@ -271,8 +271,7 @@ void RDTController::Send(const std::string& data, uint32_t max_size) {
                 }
             } else {
                 PrintPacketInfo(pkt, RECEIVER, false);
-                auto ack_num = pkt.GetPacketNumber();
-                if (ack_num == receive_base % parameters::MAX_SEQ_NUM) {
+                if (pkt.GetPacketNumber() == receive_base % parameters::MAX_SEQ_NUM) {
                     front_packet = new Packet(pkt);
                     return;
                 }
@@ -324,13 +323,13 @@ void RDTController::PrintErrorAndDC(const string& msg) {
 
 void RDTController::PrintPacketInfo(const Packet& packet, rec_or_sender_t rs,
                                     bool retrans) {
-    if (rs == RECEIVER) {
+    if (rs == SENDER) {
+        cout << "Sending";
+    } else { // rs == RECEIVER
         retrans = false;
         cout << "Receiving";
-    } else { // rs == SENDER.
-        cout << "Sending";
     }
-    cout << " packet" << " " << packet.GetPacketNumber() <<
+    cout << " packet " << packet.GetPacketNumber() <<
         " " << packet.GetWindowSize();
     if (retrans) {
         cout << " Retransmission";

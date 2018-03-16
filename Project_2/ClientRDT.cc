@@ -103,8 +103,7 @@ void ClientRDT::Close() {
         SendPacket(packet_sent, retrans);
 
         Packet packet_received;
-        num_bytes  ReceivePacket(packeeq_num;
-        _received);
+        num_bytes = ReceivePacket(packet_received);
         if (num_bytes < 0) {
             retrans = true;
         } else if (num_bytes == 0) {

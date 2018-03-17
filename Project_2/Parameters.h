@@ -19,8 +19,8 @@ const static uint32_t WINDOW_SIZE = 5120;
 const static uint32_t HEADER_SIZE = 8;
 
 // Times.
-const static uint32_t RETRANS_TIMEOUT = 500;
-const static uint32_t RETRANS_TIMEOUT_us = RETRANS_TIMEOUT * 1000;
+const static uint32_t RETRANS_TIMEOUT_ms = 500;
+const static uint32_t RETRANS_TIMEOUT_us = RETRANS_TIMEOUT_ms * 1000;
 }
 
 #endif

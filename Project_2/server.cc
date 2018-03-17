@@ -46,7 +46,6 @@ int main(int argc, char** argv) {
 
         // Receive socket for filename.
         serv_conn.Receive(filename, 256);
-        cout << "Filename: " << filename << endl;
         ifstream inFile(filename, ios::binary|ios::in);
         string file_data;
         if (inFile.fail()) {
@@ -70,7 +69,8 @@ int main(int argc, char** argv) {
                    back_inserter(file_data));
 
             // Confirm that file was found, send filesize.
-            ss << '1' << setfill('0') << setw(20) << (end - begin);
+            serv_conn.Send(string("1"));
+            ss << setfill('0') << setw(16) << (end - begin);
             serv_conn.Send(ss.str());
 
             // Send file data.

@@ -34,7 +34,7 @@ void ClientRDT::SendPacket(const Packet& packet, bool retrans) {
 // Send SYN, expect SYNACK, send ACK.
 void ClientRDT::Handshake() {
     next_seq_num = 0;
-    Packet packet = Packet(Packet::SYN, next_seq_num, parameters::WINDOW_SIZE,
+    Packet pkt_sent = Packet(Packet::SYN, next_seq_num, parameters::WINDOW_SIZE,
                            nullptr, 0);
     send_base = 0;
     bool retrans = false;
@@ -44,29 +44,29 @@ void ClientRDT::Handshake() {
     }
     
     while (true) {
-        SendPacket(packet, retrans); 
+        SendPacket(pkt_sent, retrans); 
         
-        Packet packet;
-        auto num_bytes = ReceivePacket(packet);
-        if (num_bytes <= 0) {
-            retrans = true;
-            continue;
-        }
-        
-        if (packet.GetType() == Packet::SYNACK) {
-            receive_base = packet.GetPacketNumber() + 1;
-            break;
+        Packet pkt_received;
+        auto num_bytes = ReceivePacket(pkt_received);
+        if (num_bytes > 0) {
+            if (pkt_received.GetType() == Packet::SYNACK) {
+                receive_base = pkt_received.GetPacketNumber() + 1;
+                break;
+            }
+            else {
+                PrintErrorAndDC("Expected SYNACK");
+            }
         }
         else {
-            PrintErrorAndDC("Expected SYNACK");
+            retrans = true;
         }
     }
     
     send_base++;
     next_seq_num++;
-    Packet packet2 = Packet(Packet::ACK, next_seq_num, parameters::WINDOW_SIZE,
+    Packet pkt = Packet(Packet::ACK, next_seq_num, parameters::WINDOW_SIZE,
                             nullptr, 0);
-    SendPacket(packet2, false);
+    SendPacket(pkt, false);
 }
 
 void ClientRDT::Close() {
@@ -75,50 +75,45 @@ void ClientRDT::Close() {
     if (!ConfigureTimeout(0, 0)) { return; }
 
     while (true) {
-        Packet pkt;
-        num_bytes = ReceivePacket(pkt);
+        Packet pkt_received;
+        num_bytes = ReceivePacket(pkt_received);
         if (num_bytes <= 0) {
             cerr << "Error on receiving." << endl;
             return;
         } else {
-            if (pkt.GetType() == Packet::FIN) { break; }
+            if (pkt_received.GetType() == Packet::FIN) { break; }
             // Unexpected packet type.
-            Packet pkt2(Packet::ACK, pkt.GetPacketNumber(),
+            Packet pkt_sent(Packet::ACK, pkt_received.GetPacketNumber(),
                         parameters::WINDOW_SIZE, nullptr, 0);
-            SendPacket(pkt2, false);
+            SendPacket(pkt_sent, false);
         }
     }
 
-    Packet pkt(Packet::ACK, receive_base, parameters::WINDOW_SIZE, nullptr, 0);
-    SendPacket(pkt, false);
+    Packet pkt_sent(Packet::ACK, receive_base, parameters::WINDOW_SIZE, nullptr, 0);
+    SendPacket(pkt_sent, false);
 
     receive_base++;
-    pkt = Packet(Packet::FIN, next_seq_num, parameters::WINDOW_SIZE, nullptr,
+    Packet packet_sent(Packet::FIN, next_seq_num, parameters::WINDOW_SIZE, nullptr,
                  0);
-    next_seq_num++;
     bool retrans = false;
+    next_seq_num++;
 
     if (!ConfigureTimeout(0, parameters::RETRANS_TIMEOUT_us)) { return; }
 
     while (true) {
-        SendPacket(pkt, retrans);
+        SendPacket(packet_sent, retrans);
 
-        Packet pkt2;
-        num_bytes = ReceivePacket(pkt2);
+        Packet packet_received;
+        num_bytes = ReceivePacket(packet_received);
         if (num_bytes < 0) {
             retrans = true;
-            continue;
         } else if (num_bytes == 0) {
             break;
         } else {
-            if (pkt2.GetType() == Packet::FIN) {
+            if (packet_received.GetType() == Packet::FIN) {
                 retrans = true;
-                continue;
-            } else if (pkt2.GetType() == Packet::ACK) {
+            } else if (packet_received.GetType() == Packet::ACK) {
                 break;
-            } else {
-                // Unexpected packet type.
-                continue;
             }
         }
     }

@@ -294,7 +294,7 @@ void RDTController::Send(const std::string& data, uint32_t max_size) {
             milliseconds now = duration_cast<milliseconds>(
                     system_clock::now().time_since_epoch());
             if (abs((now - timestamps[seq_n]).count()) >=
-                static_cast<int>(parameters::RETRANS_TIMEOUT)) {
+                static_cast<int>(parameters::RETRANS_TIMEOUT_ms)) {
                 timestamps[seq_n] = duration_cast<milliseconds>(
                         system_clock::now().time_since_epoch());
                 SendPacket(packets[seq_n], true);

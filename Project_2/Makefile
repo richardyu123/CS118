@@ -27,3 +27,9 @@ test: $(TEST_CC) $(BASE_CC)
 
 clean:
 	rm -f client server test
+	rm -f p2/project2_304464688_004493871.tar
+	rmdir p2
+
+dist:
+	mkdir p2
+	tar -cf p2/project2_304464688_004493871.tar README Makefile *.cc *h report.pdf

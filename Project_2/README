@@ -1,0 +1,8 @@
+Group 44
+Richard Yu 304464688
+Kaitlyne Chan 004493871
+
+
+How work was divided:
+Richard: Receive, Server Close, Client Close, Packet, 
+Kaitlyne: Send, Client Handshake, Server Handshake, server, client

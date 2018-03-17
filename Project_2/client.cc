@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
             cout << "404 File not found." << endl;
         } else {
             ofstream ofs("./received.data");
-            client_conn.Receive(s, 20);
+            client_conn.Receive(s, 16);
             stringstream ss(s);
             size_t size;
             ss >> size;

@@ -35,7 +35,7 @@ protected:
     struct sockaddr_in cli_addr;
     const int sock_fd;
     bool is_connected;
-    size_t offset;
+    size_t bytes_remaining;
     uint64_t send_base;
     uint64_t receive_base;
     uint64_t next_seq_num;

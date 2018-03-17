@@ -6,7 +6,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <unordered_map>
-#include <vector>
 
 #include "Parameters.h"
 
@@ -18,7 +17,7 @@ using namespace std::chrono;
 
 RDTController::RDTController(const int sock_fd)
     : front_packet(nullptr), cli_len(sizeof(cli_addr)), sock_fd(sock_fd),
-      is_connected(true), bytes_remaining(0), send_base(0), receive_base(0),
+      is_connected(true), offset(0), send_base(0), receive_base(0),
       next_seq_num(0) {}
 
 RDTController::~RDTController() {
@@ -37,23 +36,23 @@ void RDTController::Receive(std::string& str_buffer, size_t num_bytes) {
     size_t curr = 0;
 
     // Receive pre-buffered packets.
-    while(receive_base == received.front().num && !received.empty()) {
-        vector<char> data = received.front().pkt.GetData();
-        size_t size = min(num_bytes - curr, static_cast<size_t>(distance(
-                        data.begin() + bytes_remaining, data.end())));
-        for (auto iter = data.begin() + bytes_remaining; iter != data.begin() +
-             bytes_remaining + size; iter++) {
+    while(receive_base == (*received.begin()).num && !received.empty()) {
+        auto data = received.front().pkt.GetData();
+        size_t bytes = min(num_bytes - curr, static_cast<size_t>(distance(
+                        data.begin() + offset, data.end())));
+        for (auto iter = data.begin() + offset; iter != data.begin() +
+             offset + bytes; iter++) {
             *str_iter = *iter;
             str_iter++;
         }
-        curr += size;
+        curr += bytes;
 
-        if (size + bytes_remaining == data.size()) {
+        if (bytes + offset == data.size()) {
             received.pop_front();
             receive_base += data.size() + parameters::HEADER_SIZE;
-            bytes_remaining = 0;
+            offset = 0;
         } else {
-            bytes_remaining = size;
+            offset = bytes;
             return;
         }
 
@@ -69,7 +68,7 @@ void RDTController::Receive(std::string& str_buffer, size_t num_bytes) {
 
         // If there is some packet read from before -- read that, else
         // receive a new packet.
-        if (front_packet != nullptr) {
+        if (front_packet) {
             pkt = *front_packet;
             delete front_packet;
             front_packet = nullptr;
@@ -92,8 +91,8 @@ void RDTController::Receive(std::string& str_buffer, size_t num_bytes) {
         }
 
         // If the received packet falls within the window range.
-        if (seq_num <= receive_base + parameters::WINDOW_SIZE - 1 && seq_num >=
-                receive_base) {
+        if (seq_num >= receive_base && seq_num <= receive_base +
+                parameters::WINDOW_SIZE - 1) {
             bool retrans = false;
             auto iter = received.begin();
 
@@ -104,10 +103,12 @@ void RDTController::Receive(std::string& str_buffer, size_t num_bytes) {
             }
             if (iter == received.end()) {
                 received.emplace(iter, packet_seq_t(pkt, seq_num));
-            } else if (iter->num != seq_num) {
-                 received.emplace(iter, packet_seq_t(pkt, seq_num));
-            } else {
-                retrans = true;
+            } else if (iter != received.end()) {
+                if (iter->num != seq_num) {
+                    received.emplace(iter, packet_seq_t(pkt, seq_num));
+                } else {
+                    retrans = true;
+                }
             }
 
             // Prepare and send ACK for the packet.
@@ -133,9 +134,9 @@ void RDTController::Receive(std::string& str_buffer, size_t num_bytes) {
                 if (bytes == data.size()) {
                     received.pop_front();
                     receive_base += data.size() + parameters::HEADER_SIZE;
-                    bytes_remaining = 0;
+                    offset = 0;
                 } else {
-                    bytes_remaining = bytes;
+                    offset = bytes;
                     return;
                 }
             }

@@ -49,9 +49,9 @@ void RDTController::Receive(std::string& str_buffer, size_t num_bytes) {
         curr += size;
 
         if (size + bytes_remaining == data.size()) {
+            bytes_remaining = 0;
             received.pop_front();
             receive_base += data.size() + parameters::HEADER_SIZE;
-            bytes_remaining = 0;
         } else {
             bytes_remaining = size;
             return;
@@ -98,9 +98,8 @@ void RDTController::Receive(std::string& str_buffer, size_t num_bytes) {
             auto iter = received.begin();
 
             // Place packet into received list.
-            while (iter != received.end()) {
+            for (; iter != received.end(); iter++) {
                 if (iter->num >= seq_num) { break; }
-                iter++;
             }
             if (iter == received.end()) {
                 received.emplace(iter, packet_seq_t(pkt, seq_num));
@@ -120,23 +119,22 @@ void RDTController::Receive(std::string& str_buffer, size_t num_bytes) {
 
             // Update the window.
             while(receive_base == received.front().num) {
-                auto data = received.front().pkt.GetData();
-                size_t bytes = min(static_cast<size_t>(distance(
-                                    data.begin(), data.end())), num_bytes -
-                                    curr);
-                for (auto iter = data.begin(); iter != data.begin() + bytes;
+                vector<char> data = received.front().pkt.GetData();
+                size_t size = min(num_bytes - curr, static_cast<size_t>(
+                                  distance(data.begin(), data.end())));
+                for (auto iter = data.begin(); iter != data.begin() + size;
                         iter++) {
                     *str_iter = *iter;
                     str_iter++;
                 }
-                curr += bytes;
-                if (bytes == data.size()) {
+                if (size == data.size()) {
                     received.pop_front();
+                    curr += size;
                     receive_base += data.size() + parameters::HEADER_SIZE;
                     bytes_remaining = 0;
                 } else {
-                    bytes_remaining = bytes;
-                    return;
+                    bytes_remaining = size;
+                    break;
                 }
             }
         } else {

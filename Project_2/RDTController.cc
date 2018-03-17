@@ -2,6 +2,7 @@
 #include <fstream>
 #include <iostream>
 #include <list>
+#include <memory>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -17,13 +18,13 @@ using namespace std;
 using namespace std::chrono;
 
 RDTController::RDTController(const int sock_fd)
-    : front_packet(nullptr), cli_len(sizeof(cli_addr)), sock_fd(sock_fd),
-      is_connected(true), bytes_remaining(0), send_base(0), receive_base(0),
+    : cli_len(sizeof(cli_addr)), sock_fd(sock_fd), is_connected(true),
+      bytes_remaining(0), send_base(0), receive_base(0),
       next_seq_num(0) {}
 
 RDTController::~RDTController() {
-    if (front_packet != nullptr) {
-        delete front_packet;
+    if (front_packet) {
+        front_packet.reset();
     }
 }
 
@@ -69,10 +70,9 @@ void RDTController::Receive(std::string& str_buffer, size_t num_bytes) {
 
         // If there is some packet read from before -- read that, else
         // receive a new packet.
-        if (front_packet != nullptr) {
+        if (front_packet) {
             pkt = *front_packet;
-            delete front_packet;
-            front_packet = nullptr;
+            front_packet.reset();
         } else {
             n_bytes = recvfrom(sock_fd, buffer, parameters::MAX_PACKET_LEN,
                             0, (struct sockaddr*)&cli_addr, &cli_len);
@@ -269,7 +269,7 @@ void RDTController::Send(const std::string& data, uint32_t max_size) {
             } else {
                 PrintPacketInfo(pkt, RECEIVER, false);
                 if (pkt.GetPacketNumber() == receive_base % parameters::MAX_SEQ_NUM) {
-                    front_packet = new Packet(pkt);
+                    front_packet = make_unique<Packet>(pkt);
                     return;
                 }
             }

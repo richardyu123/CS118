@@ -1,5 +1,6 @@
 #include <chrono>
 #include <iostream>
+#include <memory>
 #include <stdint.h>
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -102,7 +103,7 @@ void ServerRDT::Handshake() {
             waiting = false;
             break;
         default:
-            front_packet = new Packet(pkt);
+            front_packet = make_unique<Packet>(pkt);
             waiting = false;
             break;
         }

@@ -1,5 +1,5 @@
 CXX = g++
-FLAGS = -Wall -Wextra -std=c++11
+FLAGS = -Wall -Wextra -std=c++14
 DIR = ./project_2
 BASE_CC = Packet.cc RDTController.cc Parameters.cc
 TEST_CC = PacketTest.cc

@@ -2,6 +2,7 @@
 #define RDT_CONTROLLER_H
 
 #include <list>
+#include <memory>
 #include <netinet/in.h>
 #include <string>
 #include <sys/socket.h>
@@ -29,7 +30,7 @@ protected:
     void PrintPacketInfo(const Packet& packet, rec_or_sender_t rs,
                          bool retrans);
 
-    Packet* front_packet;
+    std::unique_ptr<Packet> front_packet;
 
     socklen_t cli_len;
     struct sockaddr_in cli_addr;

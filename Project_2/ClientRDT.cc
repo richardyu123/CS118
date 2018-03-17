@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <unistd.h>
 
 #include "ClientRDT.h"
 #include "Packet.h"

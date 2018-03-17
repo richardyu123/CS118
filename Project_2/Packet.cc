@@ -4,8 +4,8 @@
 
 using namespace std;
 
-Packet::Packet(packet_t packet_type, uint16_t packet_num, uint16_t window_size,
-               char* data, size_t data_length)
+Packet::Packet(packet_t packet_type, char* data, size_t data_length,
+               uint16_t packet_num, uint16_t window_size)
     : packet_type(packet_type), packet_num(packet_num), window_size(window_size),
       data_length(data_length) {
     packet_data.resize(parameters::HEADER_SIZE + data_length);

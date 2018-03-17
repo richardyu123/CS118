@@ -34,8 +34,8 @@ void ClientRDT::SendPacket(const Packet& packet, bool retrans) {
 // Send SYN, expect SYNACK, send ACK.
 void ClientRDT::Handshake() {
     next_seq_num = 0;
-    Packet pkt_sent = Packet(Packet::SYN, next_seq_num, parameters::WINDOW_SIZE,
-                           nullptr, 0);
+    Packet pkt_sent = Packet(Packet::SYN, nullptr, 0, next_seq_num,
+                             parameters::WINDOW_SIZE);
     send_base = 0;
     bool retrans = false;
 
@@ -64,8 +64,8 @@ void ClientRDT::Handshake() {
     
     send_base++;
     next_seq_num++;
-    Packet pkt = Packet(Packet::ACK, next_seq_num, parameters::WINDOW_SIZE,
-                            nullptr, 0);
+    Packet pkt = Packet(Packet::ACK, nullptr, 0, next_seq_num,
+                        parameters::WINDOW_SIZE);
     SendPacket(pkt, false);
 }
 
@@ -83,18 +83,19 @@ void ClientRDT::Close() {
         } else {
             if (pkt_received.GetType() == Packet::FIN) { break; }
             // Unexpected packet type.
-            Packet pkt_sent(Packet::ACK, pkt_received.GetPacketNumber(),
-                        parameters::WINDOW_SIZE, nullptr, 0);
+            Packet pkt_sent(Packet::ACK, nullptr, 0,
+                            pkt_received.GetPacketNumber(),
+                            parameters::WINDOW_SIZE);
             SendPacket(pkt_sent, false);
         }
     }
 
-    Packet pkt_sent(Packet::ACK, receive_base, parameters::WINDOW_SIZE, nullptr, 0);
+    Packet pkt_sent(Packet::ACK, nullptr, 0, receive_base, parameters::WINDOW_SIZE);
     SendPacket(pkt_sent, false);
 
     receive_base++;
-    Packet packet_sent(Packet::FIN, next_seq_num, parameters::WINDOW_SIZE, nullptr,
-                 0);
+    Packet packet_sent(Packet::FIN, nullptr, 0, next_seq_num,
+                       parameters::WINDOW_SIZE);
     bool retrans = false;
     next_seq_num++;
 

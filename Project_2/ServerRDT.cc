@@ -64,8 +64,8 @@ void ServerRDT::Handshake() {
             break;
         case Packet::FIN:
             // Unexpected FIN.
-            pkt = Packet(Packet::ACK, pkt.GetPacketNumber(),
-                         parameters::WINDOW_SIZE, nullptr, 0);
+            pkt = Packet(Packet::ACK, nullptr, 0, pkt.GetPacketNumber(),
+                         parameters::WINDOW_SIZE);
             PrintPacketInfo(pkt, SENDER, false);
             sendto(sock_fd, pkt.GetPacketData().data(), pkt.GetPacketLength(),
                    0, (struct sockaddr*)&cli_addr, cli_len);
@@ -78,8 +78,8 @@ void ServerRDT::Handshake() {
     if (!ConfigureTimeout(0, parameters::RETRANS_TIMEOUT_us)) { return; }
 
     // Generate and send SYNACK packet.
-    Packet pkt(Packet::SYNACK, next_seq_num, parameters::WINDOW_SIZE, nullptr,
-               0);
+    Packet pkt(Packet::SYNACK, nullptr, 0, next_seq_num,
+               parameters::WINDOW_SIZE);
     waiting = true;
     bool retrans = false;
 
@@ -117,7 +117,7 @@ void ServerRDT::Handshake() {
 void ServerRDT::Close() {
     ssize_t num_bytes;
 
-    Packet pkt_sent(Packet::FIN, next_seq_num, parameters::WINDOW_SIZE, nullptr, 0);
+    Packet pkt_sent(Packet::FIN, nullptr, 0, next_seq_num, parameters::WINDOW_SIZE);
     bool retrans = false;
     bool waiting_for_fin = true;
     bool received_fin = false;
@@ -189,8 +189,8 @@ void ServerRDT::Close() {
                 continue;
             }
         }
-        Packet pkt_sent(Packet::ACK, receive_base, parameters::WINDOW_SIZE,
-                    nullptr, 0);
+        Packet pkt_sent(Packet::ACK, nullptr, 0, receive_base,
+                        parameters::WINDOW_SIZE);
         SendPacket(pkt_sent, false);
         waiting_for_fin = true;
     }

@@ -110,8 +110,8 @@ void RDTController::Receive(std::string& str_buffer, size_t num_bytes) {
             }
 
             // Prepare and send ACK for the packet.
-            Packet acket(Packet::ACK, pkt.GetPacketNumber(),
-                            parameters::WINDOW_SIZE, nullptr, 0);
+            Packet acket(Packet::ACK, nullptr, 0, pkt.GetPacketNumber(),
+                         parameters::WINDOW_SIZE);
             PrintPacketInfo(acket, SENDER, retrans);
             sendto(sock_fd, acket.GetPacketData().data(),
                     acket.GetPacketLength(), 0, (struct sockaddr*)&cli_addr,
@@ -142,8 +142,8 @@ void RDTController::Receive(std::string& str_buffer, size_t num_bytes) {
              * Prepare and send ACK, but do not place into received list if the
              * packet does not fall within the receive window.
              */
-            Packet acket(Packet::ACK, pkt.GetPacketNumber(),
-                            parameters::WINDOW_SIZE, nullptr, 0);
+            Packet acket(Packet::ACK, nullptr, 0, pkt.GetPacketNumber(),
+                         parameters::WINDOW_SIZE);
             PrintPacketInfo(acket, SENDER, (seq_num < receive_base));
             sendto(sock_fd, acket.GetPacketData().data(),
                     acket.GetPacketLength(), 0, (struct sockaddr*)&cli_addr,
@@ -205,9 +205,9 @@ void RDTController::Send(const std::string& data, uint32_t max_size) {
                 break;
             }
 
-            Packet pkt = Packet(Packet::DATA, next_seq_num %
+            Packet pkt = Packet(Packet::DATA, buf, count, next_seq_num %
                                 parameters::MAX_SEQ_NUM,
-                                parameters::WINDOW_SIZE, buf, count);
+                                parameters::WINDOW_SIZE);
             
             // Sent packet needs to be acked.
             unacked_seqs.push_back(next_seq_num);

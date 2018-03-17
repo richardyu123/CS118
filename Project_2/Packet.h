@@ -15,8 +15,8 @@ public:
         SYNACK
     } packet_t;
 
-    Packet(packet_t packet_type, uint16_t packet_num, uint16_t window_size,
-           char* data, size_t data_length);
+    Packet(packet_t packet_type, char* data, size_t data_length,
+           uint16_t packet_num, uint16_t window_size);
     Packet(char* full_data, size_t data_length);
     Packet();
 
